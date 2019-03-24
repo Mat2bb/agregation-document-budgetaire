@@ -5,7 +5,7 @@ workflow "Deploy npm build on gh-pages" {
 
 action "With Master Branch" {
   uses = "actions/bin/filter@master"
-  args = "branch 'master|github-action'"
+  args = "branch github-action"
 }
 
 action "Install npm dependencies" {
