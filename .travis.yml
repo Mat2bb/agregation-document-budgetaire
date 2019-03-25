@@ -1,0 +1,31 @@
+# Language and env
+
+language: node_js
+node_js: 'node'
+
+# What is built
+
+branches:
+  only:
+  - master
+
+# Travis Lifecycle
+
+install:
+  - npm ci
+
+script:
+  - npm run build
+#  - npm test
+
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: bash ./tools/deploy.sh
+  on:
+    branch: master
+
+# Other configs
+
+git:
+  depth: 10
