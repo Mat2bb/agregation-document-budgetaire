@@ -24,7 +24,7 @@ if(isMontreuil){
 	.then(([doc, natureToChapitreFI]) => xmlDocumentToDocumentBudgetaire(doc, natureToChapitreFI))
 	.then(docBudg => {
 		console.log('docBudg', docBudg.toJS())
-		store.mutations.setTestedDocumentBudgetaire(docBudg)
+		store.mutations.testedDocumentBudgetaire.setValue(docBudg)
 		return docBudg
 	})
 	.catch(console.error)
