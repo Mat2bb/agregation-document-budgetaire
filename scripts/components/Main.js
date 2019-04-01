@@ -1,7 +1,7 @@
 import {Set as ImmutableSet} from 'immutable'
 import {h} from 'preact'
 
-import Agregation from './Agregation.js'
+import Aggregation from './Aggregation.js'
 import ContextHeader from './ContextHeader.js'
 
 import makeLigneBudgetFilterFromFormula from '../DocumentBudgetaireQueryLanguage/makeLigneBudgetFilterFromFormula.js'
@@ -10,7 +10,7 @@ import _actions from '../actions'
 
 function mapStateToProps({formulas, testedDocumentBudgetaire}){
     return {
-        agregation: [...formulas.values()].map(({id, name, formula}) => (
+        aggregation: [...formulas.values()].map(({id, name, formula}) => (
             {
                 id,
                 name, 
@@ -43,7 +43,7 @@ export default function({store}){
     return html`
         <main>
             <${ContextHeader} documentBudgetaire=${docBudg} onNewDocumentBudgetaireText=${actions.onNewDocumentBudgetaireText} /> 
-            <${Agregation} ...${props}/>
+            <${Aggregation} ...${props}/>
         </main>
     `
 }

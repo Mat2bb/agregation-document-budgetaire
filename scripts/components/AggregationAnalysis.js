@@ -1,18 +1,18 @@
 import {h} from 'preact'
 
-function makeUnusedLigneBudgetSet(documentBudgetaire, agregation){
+function makeUnusedLigneBudgetSet(documentBudgetaire, aggregation){
     return documentBudgetaire.rows.filter(ligneBudget => {
-        // a ligneBudget is unused if it's part of no agregation
-        return !agregation.some(agg => agg.rows.has(ligneBudget));
+        // a ligneBudget is unused if it's part of no aggregation
+        return !aggregation.some(agg => agg.rows.has(ligneBudget));
     })
 }
 
-function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, agregation){
+function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregation){
     const aggregationSetsByRow = new Map()
 
     for(const ligneBudget of documentBudgetaire.rows){
         const aggregationSets = []
-        for(const aggLeaf of agregation){
+        for(const aggLeaf of aggregation){
             if(aggLeaf.rows.has(ligneBudget)){
                 aggregationSets.push(aggLeaf)
             }
@@ -28,19 +28,19 @@ function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, agregation){
 }
 
 
-export default function({agregation, documentBudgetaire}){
+export default function({aggregation, documentBudgetaire}){
     const unusedRows = documentBudgetaire ?
-        makeUnusedLigneBudgetSet(documentBudgetaire, agregation).toJS() : 
+        makeUnusedLigneBudgetSet(documentBudgetaire, aggregation).toJS() : 
         [];
     const rowsUsedMoreThanOnce = documentBudgetaire ?
-        makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, agregation) : 
+        makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregation) : 
         [];
 
     return html`
         <section>
             <h1>Analyse</h1>
             <p>Il y a ${documentBudgetaire && documentBudgetaire.rows.size} lignes dans le document budgetaire</p>
-            <p>Il y a ${agregation.length} feuilles d'agrégation</p>
+            <p>Il y a ${aggregation.length} feuilles d'agrégation</p>
 
             <h2>Lignes non-utilisées (${unusedRows.length})</h2>
             <table>

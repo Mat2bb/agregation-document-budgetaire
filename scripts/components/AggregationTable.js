@@ -1,16 +1,16 @@
 import {h} from 'preact'
 import {sum} from 'd3-array'
 
-import AgregationTableRow from './AgregationTableRow.js'
+import AggregationTableRow from './AggregationTableRow.js'
 
 // formula id that must be usable as formula identifier
 function randomUsableId(){
     return 'ID_'+(Math.random().toString(36).slice(2))
 }
 
-export default function AgregationTable({agregation, addFormula, changeFormula}){
+export default function AggregationTable({aggregation, addFormula, changeFormula}){
     return html`
-        <table class="agregation">
+        <table class="aggregation">
             <thead>
                 <tr>
                     <th>Nom</th>
@@ -21,7 +21,7 @@ export default function AgregationTable({agregation, addFormula, changeFormula})
             </thead>
             <tbody>
                 ${ 
-                    agregation.map(ag => {
+                    aggregation.map(ag => {
                         const {id, name, formula} = ag
                         
                         function onNameChange({target}){
@@ -32,7 +32,7 @@ export default function AgregationTable({agregation, addFormula, changeFormula})
                         }
 
                         return html`
-                            <${AgregationTableRow} key=${ag.id} ...${ag} onNameChange=${onNameChange} onFormulaChange=${onFormulaChange} />`
+                            <${AggregationTableRow} key=${ag.id} ...${ag} onNameChange=${onNameChange} onFormulaChange=${onFormulaChange} />`
                     })
                         
                 }

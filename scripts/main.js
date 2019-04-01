@@ -10,7 +10,7 @@ import store from './store.js'
 
 import { getStoredState, saveState } from './stateStorage.js'
 
-import montreuilCVSToAgregationFormulas from './montreuilCVSToAgregationFormulas.js'
+import montreuilCVSToAggregationFormulas from './montreuilCVSToAggregationFormulas.js'
 
 const isMontreuil = new Set((new URLSearchParams(location.search)).keys()).has('montreuil')
 
@@ -35,7 +35,7 @@ if(isMontreuil){
 		csv('./data/agregation-Montreuil-v4.csv'),
 		docBudgP
 	])
-	.then(([csvData, docBudg]) => montreuilCVSToAgregationFormulas(csvData, [docBudg]))
+	.then(([csvData, docBudg]) => montreuilCVSToAggregationFormulas(csvData, [docBudg]))
 	.then(formulas => {
 		console.log('formulas', formulas)
 

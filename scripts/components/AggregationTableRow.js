@@ -1,7 +1,7 @@
 import {h, Component} from 'preact'
 import {sum} from 'd3-array'
 
-export default class AgregationTableRow extends Component{
+export default class AggregationTableRow extends Component{
 
     constructor(props) {
         super(props);
