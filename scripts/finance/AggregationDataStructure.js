@@ -28,7 +28,7 @@ const AggregationDescriptionNodeFields = {
     'name': undefined,
 }
 
-export const AggregationLeaf = Record({
+export const AggregationDescriptionLeaf = Record({
     formula: undefined,
     ...AggregationDescriptionNodeFields
 })

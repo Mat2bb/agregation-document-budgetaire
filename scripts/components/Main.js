@@ -8,9 +8,10 @@ import makeLigneBudgetFilterFromFormula from '../DocumentBudgetaireQueryLanguage
 import {ASYNC_STATUS, STATUS_VALUE} from '../asyncStatusHelpers.js';
 import _actions from '../actions'
 
-function mapStateToProps({formulas, testedDocumentBudgetaire}){
+function mapStateToProps({aggregationDescription, testedDocumentBudgetaire}){
     return {
-        aggregation: [...formulas.values()].map(({id, name, formula}) => (
+        aggregationDescription,
+        /*aggregation: [...formulas.values()].map(({id, name, formula}) => (
             {
                 id,
                 name, 
@@ -19,7 +20,7 @@ function mapStateToProps({formulas, testedDocumentBudgetaire}){
                     testedDocumentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula)) :
                     new ImmutableSet()
             }
-        )),
+        )),*/
         documentBudgetaire: testedDocumentBudgetaire && testedDocumentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? 
             testedDocumentBudgetaire : 
             undefined
@@ -35,8 +36,12 @@ export default function({store}){
         undefined
 
     const props = Object.assign(
-        mapStateToProps(store.state),
+        {},
         store.mutations,
+        { // disambiguation with props with the same name
+            aggregationDescriptionMutations: store.mutations.aggregationDescription
+        },
+        mapStateToProps(store.state),
         actions
     )
 

@@ -16,5 +16,5 @@ export function getStoredState(){
 }
 
 export function saveState(state){
-    localStorage.setItem(FORMULA_STORAGE_KEY, JSON.stringify([...state.formulas.values()]))
+    //localStorage.setItem(FORMULA_STORAGE_KEY, JSON.stringify([...state.formulas.values()]))
 }

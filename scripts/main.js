@@ -1,5 +1,8 @@
+import { OrderedMap } from 'immutable';
 import {h, render} from 'preact'
 import {csv, xml} from 'd3-fetch';
+
+import {AggregationDescription} from './finance/AggregationDataStructure.js'
 
 import xmlDocumentToDocumentBudgetaire from './finance/xmlDocumentToDocumentBudgetaire.js'
 import makeNatureToChapitreFI from './finance/makeNatureToChapitreFI.js'
@@ -11,6 +14,14 @@ import store from './store.js'
 import { getStoredState, saveState } from './stateStorage.js'
 
 import montreuilCVSToAggregationFormulas from './montreuilCVSToAggregationFormulas.js'
+
+// initialize store
+store.mutations.aggregationDescription.set(new AggregationDescription({
+	id: 'racine',
+	name: 'racine',
+	children: new OrderedMap()
+}))
+
 
 const isMontreuil = new Set((new URLSearchParams(location.search)).keys()).has('montreuil')
 
@@ -57,10 +68,10 @@ else{
 	})
 	.catch(console.error)
 
-	const formulas = getStoredState()
+	/*const formulas = getStoredState()
 	for(const {id, name, formula} of formulas){
 		store.mutations.addFormula({ id, name, formula })
-	}
+	}*/
 }
 
 // UI render

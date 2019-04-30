@@ -1,5 +1,6 @@
 import {h, Component} from 'preact'
 
+/*
 class AggregationDescriptionLeafEditor extends Component{
 
     constructor(props) {
@@ -56,8 +57,82 @@ class AggregationDescriptionLeafEditor extends Component{
         `
     }
 }
+*/
+
+class MillerColumn extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {adding: false};
+    }
+
+    render({aggregationDescription, addChild}, {adding}) {
+        console.log('MillerColumn', aggregationDescription.children.toJS())
+
+        return (
+            html`<ol>
+                ${
+                    aggregationDescription.children.valueSeq().map(node => {
+                        return html`<li>${node.name}</li>`
+                    }).toArray()
+                }
+                <li>
+                    ${
+                        adding ?
+                            html`<form onSubmit=${e => {
+                                e.preventDefault();
+                                addChild({
+                                    id: e.target.querySelector('input[name="id"]').value,
+                                    name: e.target.querySelector('input[name="name"]').value,
+                                    type: e.target.querySelector('input[name="type"]:checked').value,
+                                })
+                            }}>
+                                <label>
+                                    Identifiant
+                                    <input name="id"/>
+                                </label>
+                                <label>
+                                    Nom
+                                    <input name="name"/>
+                                </label>
+                                <section>
+                                    Type
+                                    <label>
+                                        <input defaultChecked type="radio" name="type" value="subgroup"/>
+                                        Sous-groupe
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="type" value="formula"/>
+                                        Formule
+                                    </label>
+                                </section>
+                                <button type="submit">ok</button>
+                                <button type="button" onClick=${() => this.setState({adding: false})}>annuler</button>
+                            </form>` : 
+                            html`<button onClick=${() => this.setState({adding: true})}>+</button>`
+                    }
+                </li>
+            </ol>`
+      );
+    }
+  }
+
+// https://en.wikipedia.org/wiki/Miller_columns
+function MillerColumns({aggregationDescription, addChild, selectedList}){
+    return html`<section class="miller-columns">
+        <${MillerColumn} aggregationDescription=${aggregationDescription} addChild=${childData => {
+            addChild(aggregationDescription, childData)
+        }} />
+    </section>`
+}
 
 
+export default function({aggregationDescription, aggregationDescriptionMutations: {addChild}}){
+    return html`<${MillerColumns} ...${ {aggregationDescription, addChild} }/>`
+}
+
+
+
+/*
 export default function({aggregationDescriptionLeaf, testedAggregatedDocumentBudgetaireNodeData, onIdChange, onNameChange, onFormulaChange}){
 
     return aggregationDescriptionNode.formula ?
@@ -75,3 +150,4 @@ export default function({aggregationDescriptionLeaf, testedAggregatedDocumentBud
     `
 
 }
+*/

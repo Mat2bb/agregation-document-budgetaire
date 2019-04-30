@@ -1,14 +1,16 @@
 import {h} from 'preact'
 
 import AggregationAnalysis from './AggregationAnalysis.js'
-import AggregationTable from './AggregationTable.js'
+import AggregationDescriptionEditor from './AggregationDescriptionEditor.js'
 
 
-export default function({aggregation, documentBudgetaire, addFormula, changeFormula}){
+export default function({aggregationDescription, aggregation, documentBudgetaire, aggregationDescriptionMutations}){
     return html`
         <div>
-            <${AggregationTable} ...${ {aggregation, addFormula, changeFormula} } />
-            <${AggregationAnalysis} aggregation=${aggregation} documentBudgetaire=${documentBudgetaire} />
+            <${AggregationDescriptionEditor} ...${ {aggregationDescription, aggregationDescriptionMutations} } />
+            
         </div>
     `
+    // <${AggregationAnalysis} aggregation=${aggregation} documentBudgetaire=${documentBudgetaire} />
 }
+
