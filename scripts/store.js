@@ -34,6 +34,7 @@ function fillAggregationDescriptionNodeToKeyPath(aggregationDescription){
 
 export default new Store({
     state: {
+        millerColumnSelection: new List(),
         aggregationDescription: undefined,
         testedDocumentBudgetaire: undefined
     },
@@ -57,6 +58,9 @@ export default new Store({
                 // this changes all objects in the path, of which aggregationDescriptionNodeToKeyPath does not have the keypaths now
                 state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode)
                 fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
+            },
+            selectNode(state, nodeId){
+                state.millerColumnSelection = new List([nodeId])
             }
         },
         testedDocumentBudgetaire: makeAsyncMutationFunctions('testedDocumentBudgetaire')

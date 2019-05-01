@@ -79,15 +79,20 @@
                 margin: 0 0.5em;
             }
 
+            .miller-columns{
+                display: flex;
+                flex-direction: row;
+            }
+
             .miller-columns ol{
                 display: flex;
                 flex-direction: column;
                 
-                max-width: 25vw;
+                width: 20vw;
 
                 margin: 0;
                 padding: 0;
-                
+
                 list-style: none;
             }
 
@@ -95,8 +100,13 @@
                 padding: 0.5em;
                 text-align: center;
                 border: 1px solid #DDD;
+
+                cursor: pointer;
             }
 
+            .miller-columns ol li.selected{
+                background-color: lightblue;
+            }
         </style>
 
     </head>

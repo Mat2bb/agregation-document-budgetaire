@@ -8,9 +8,10 @@ import makeLigneBudgetFilterFromFormula from '../DocumentBudgetaireQueryLanguage
 import {ASYNC_STATUS, STATUS_VALUE} from '../asyncStatusHelpers.js';
 import _actions from '../actions'
 
-function mapStateToProps({aggregationDescription, testedDocumentBudgetaire}){
+function mapStateToProps({aggregationDescription, testedDocumentBudgetaire, millerColumnSelection}){
     return {
         aggregationDescription,
+        selectedList: millerColumnSelection,
         /*aggregation: [...formulas.values()].map(({id, name, formula}) => (
             {
                 id,

@@ -65,14 +65,19 @@ class MillerColumn extends Component {
         this.state = {adding: false};
     }
 
-    render({aggregationDescription, addChild}, {adding}) {
-        console.log('MillerColumn', aggregationDescription.children.toJS())
+    render({aggregationDescription, addChild, onNodeSelection, selectedChildId}, {adding}) {
 
         return (
             html`<ol>
                 ${
                     aggregationDescription.children.valueSeq().map(node => {
-                        return html`<li>${node.name}</li>`
+                        return html`
+                            <li 
+                                class=${node.id === selectedChildId ? 'selected' : undefined} 
+                                onClick=${() => onNodeSelection(node.id === selectedChildId ? undefined : node.id)}
+                            >
+                                ${node.name}
+                            </li>`
                     }).toArray()
                 }
                 <li>
@@ -117,17 +122,35 @@ class MillerColumn extends Component {
   }
 
 // https://en.wikipedia.org/wiki/Miller_columns
-function MillerColumns({aggregationDescription, addChild, selectedList}){
+function MillerColumns({aggregationDescription, selectedList, addChild, onNodeSelection}){
+
+    const firstSelectedId = selectedList.first();
+    const selectedFirstChild = aggregationDescription.children.get(firstSelectedId);
+
     return html`<section class="miller-columns">
-        <${MillerColumn} aggregationDescription=${aggregationDescription} addChild=${childData => {
-            addChild(aggregationDescription, childData)
-        }} />
+        <${MillerColumn} 
+            aggregationDescription=${aggregationDescription} 
+            selectedChildId=${firstSelectedId}
+            addChild=${childData => { addChild(aggregationDescription, childData) } }
+            onNodeSelection=${onNodeSelection},
+        />
+        ${
+            firstSelectedId ?
+                html`
+                <${MillerColumn} 
+                    aggregationDescription=${selectedFirstChild} 
+                    selectedChildId=${'TODO'}
+                    addChild=${childData => { addChild(selectedFirstChild, childData) } }
+                    onNodeSelection=${'TODO'},
+                />` : undefined
+
+        }
     </section>`
 }
 
 
-export default function({aggregationDescription, aggregationDescriptionMutations: {addChild}}){
-    return html`<${MillerColumns} ...${ {aggregationDescription, addChild} }/>`
+export default function({aggregationDescription, selectedList, aggregationDescriptionMutations: {addChild, selectNode}}){
+    return html`<${MillerColumns} ...${ {aggregationDescription, selectedList, addChild, onNodeSelection: selectNode} }/>`
 }
 
 
