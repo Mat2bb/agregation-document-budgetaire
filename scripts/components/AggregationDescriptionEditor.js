@@ -1,3 +1,4 @@
+import { List } from 'immutable';
 import {h, Component} from 'preact'
 
 /*
@@ -125,24 +126,27 @@ class MillerColumn extends Component {
 function MillerColumns({aggregationDescription, selectedList, addChild, onNodeSelection}){
 
     const firstSelectedId = selectedList.first();
-    const selectedFirstChild = aggregationDescription.children.get(firstSelectedId);
 
     return html`<section class="miller-columns">
         <${MillerColumn} 
             aggregationDescription=${aggregationDescription} 
             selectedChildId=${firstSelectedId}
             addChild=${childData => { addChild(aggregationDescription, childData) } }
-            onNodeSelection=${onNodeSelection},
+            onNodeSelection=${id => onNodeSelection(id, 0)},
         />
         ${
-            firstSelectedId ?
-                html`
-                <${MillerColumn} 
-                    aggregationDescription=${selectedFirstChild} 
-                    selectedChildId=${'TODO'}
-                    addChild=${childData => { addChild(selectedFirstChild, childData) } }
-                    onNodeSelection=${'TODO'},
-                />` : undefined
+            selectedList.map((id, i) => {
+                const keyPath = selectedList.slice(0, i+1).map(id => List(['children', id])).flatten()
+
+                const node = aggregationDescription.getIn(keyPath)
+
+                return html`<${MillerColumn} 
+                    aggregationDescription=${node} 
+                    selectedChildId=${selectedList.get(i+1)}
+                    addChild=${childData => { addChild(node, childData) } }
+                    onNodeSelection=${id => onNodeSelection(id, i+1)},
+                />`
+            }).toArray()
 
         }
     </section>`

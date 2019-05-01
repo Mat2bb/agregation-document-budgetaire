@@ -59,8 +59,8 @@ export default new Store({
                 state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode)
                 fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
             },
-            selectNode(state, nodeId){
-                state.millerColumnSelection = new List([nodeId])
+            selectNode(state, nodeId, index){
+                state.millerColumnSelection = state.millerColumnSelection.slice(0, index).push(nodeId)
             }
         },
         testedDocumentBudgetaire: makeAsyncMutationFunctions('testedDocumentBudgetaire')
