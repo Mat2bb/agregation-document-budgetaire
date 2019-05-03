@@ -2,7 +2,7 @@ import { OrderedMap, List } from 'immutable';
 
 import Store from 'baredux'
 
-import {AggregationDescription, AggregationDescriptionLeaf} from './finance/AggregationDataStructure.js'
+import {AggregationDescription, AggregationDescriptionLeaf} from './finance/AggregationDataStructures.js'
 import {makeAsyncMutationFunctions} from './asyncStatusHelpers.js'
 
 
@@ -55,12 +55,17 @@ export default new Store({
 
                 aggregationDescriptionNodeToKeyPath.set(newNode, nodeKeyPath)
 
-                // this changes all objects in the path, of which aggregationDescriptionNodeToKeyPath does not have the keypaths now
                 state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode)
                 fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
             },
             selectNode(state, nodeId, index){
                 state.millerColumnSelection = state.millerColumnSelection.slice(0, index).push(nodeId)
+            },
+            changeFormula(state, node, newFormula){
+                const nodeFormulaKeyPath = aggregationDescriptionNodeToKeyPath.get(node).push('formula')
+                
+                state.aggregationDescription = state.aggregationDescription.setIn(nodeFormulaKeyPath, newFormula)
+                fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
             }
         },
         testedDocumentBudgetaire: makeAsyncMutationFunctions('testedDocumentBudgetaire')

@@ -102,11 +102,36 @@
                 border: 1px solid #DDD;
 
                 cursor: pointer;
+
+                position: relative;
             }
 
             .miller-columns ol li.selected{
                 background-color: lightblue;
             }
+
+            .miller-columns ol li::after{                
+                position: absolute;
+
+                right: 0;
+
+                font-family: sans serif;
+                font-size: 1.3em;
+                line-height: 100%;
+
+                padding-right: 0.5em;
+            }
+
+
+            .miller-columns ol li.formula::after{
+                content: "∩ ∪";
+            }
+
+            .miller-columns ol li.subgroup::after{
+                content: "⊃";
+            }
+
+
         </style>
 
     </head>

@@ -2,7 +2,7 @@ import { OrderedMap } from 'immutable';
 import {h, render} from 'preact'
 import {csv, xml} from 'd3-fetch';
 
-import {AggregationDescription} from './finance/AggregationDataStructure.js'
+import {AggregationDescription} from './finance/AggregationDataStructures.js'
 
 import xmlDocumentToDocumentBudgetaire from './finance/xmlDocumentToDocumentBudgetaire.js'
 import makeNatureToChapitreFI from './finance/makeNatureToChapitreFI.js'
