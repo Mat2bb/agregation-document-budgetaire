@@ -1,16 +1,13 @@
 import { List } from 'immutable';
 import {h, Component} from 'preact'
 
+import {aggregatedDocumentBudgetaireNodeElements, aggregatedDocumentBudgetaireNodeTotal} from '../finance/AggregationDataStructures.js'
+
 
 function AggregationDescriptionLeafEditor({
     aggregationDescriptionLeaf, aggregatedDocumentBudgetaireCorrespondingNode, onIdChange, onNameChange, onFormulaChange
 }){
     const {id, name, formula} = aggregationDescriptionLeaf
-    //const {count, amount} = testedAggregatedDocumentBudgetaireNodeData
-    // amount: sum(rows.toJS().map(r => r['MtReal']))
-
-    //<span>${count}</span>
-    //<span>${amount.toFixed(2)+'€'}</span>
 
     /*
         <input type="text" value=${id} onInput=${onIdChange} />
@@ -19,9 +16,27 @@ function AggregationDescriptionLeafEditor({
 
     return html`
         <div class="formula-editor">
-            <h1>${name} <small>${id}</small></h1>
+            <h1>${name} <small>(${id})</small></h1>
             <div class="formula">
                 <input type="text" value=${formula} onInput=${e => onFormulaChange(e.target.value)} />
+                <table class="summary">
+                    <tr>
+                        <td>Nombre d'éléments</td>
+                        <td>
+                            <strong>
+                                ${aggregatedDocumentBudgetaireNodeElements(aggregatedDocumentBudgetaireCorrespondingNode).size}
+                            </strong>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Total</td>
+                        <td class="money-amount">
+                            <strong>
+                            ${aggregatedDocumentBudgetaireNodeTotal(aggregatedDocumentBudgetaireCorrespondingNode).toFixed(2)+'€'}
+                            </strong>
+                        </td>
+                    </tr>
+                </table>
                 <table class="formula-rows">
                     <thead>
                         <tr>
