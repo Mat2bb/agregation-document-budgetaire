@@ -2,18 +2,18 @@ import { OrderedMap } from 'immutable';
 import {h, render} from 'preact'
 import {csv, xml} from 'd3-fetch';
 
-import {AggregationDescription} from './finance/AggregationDataStructures.js'
+import {AggregationDescription} from '../finance/AggregationDataStructures.js'
 
-import xmlDocumentToDocumentBudgetaire from './finance/xmlDocumentToDocumentBudgetaire.js'
-import makeNatureToChapitreFI from './finance/makeNatureToChapitreFI.js'
+import xmlDocumentToDocumentBudgetaire from '../finance/xmlDocumentToDocumentBudgetaire.js'
+import makeNatureToChapitreFI from '../finance/makeNatureToChapitreFI.js'
 
-import Main from './components/Main.js'
+import Main from '../components/Main.js'
 
-import store from './store.js'
+import store from '../store.js'
 
-import { getStoredState, saveState } from './stateStorage.js'
+import { getStoredState, saveState } from '../stateStorage.js'
 
-import montreuilCVSToAggregationFormulas from './montreuilCVSToAggregationFormulas.js'
+import montreuilCVSToAggregationFormulas from '../montreuilCVSToAggregationFormulas.js'
 
 // initialize store
 store.mutations.aggregationDescription.set(new AggregationDescription({
