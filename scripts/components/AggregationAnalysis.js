@@ -1,19 +1,25 @@
+import { Set as ImmutableSet } from 'immutable';
 import {h} from 'preact'
 
-function makeUnusedLigneBudgetSet(documentBudgetaire, aggregation){
-    return documentBudgetaire.rows.filter(ligneBudget => {
-        // a ligneBudget is unused if it's part of no aggregation
-        return !aggregation.some(agg => agg.rows.has(ligneBudget));
-    })
+import makeAggregateFunction from '../finance/makeAggregateFunction.js';
+import { getAggregatedDocumentBudgetaireLeaves } from '../finance/AggregationDataStructures.js';
+
+function makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire){
+    const leaves = getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire)
+    const usedLigneBudgets = ImmutableSet.union(leaves.map(l => l.elements))
+
+    return documentBudgetaire.rows.filter(ligneBudget => !usedLigneBudgets.has(ligneBudget)).toArray()
 }
 
-function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregation){
+function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire){
+    const leaves = getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire)
+
     const aggregationSetsByRow = new Map()
 
     for(const ligneBudget of documentBudgetaire.rows){
         const aggregationSets = []
-        for(const aggLeaf of aggregation){
-            if(aggLeaf.rows.has(ligneBudget)){
+        for(const aggLeaf of leaves){
+            if(aggLeaf.elements.has(ligneBudget)){
                 aggregationSets.push(aggLeaf)
             }
         }
@@ -28,19 +34,25 @@ function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregation){
 }
 
 
-export default function({aggregation, documentBudgetaire}){
+export default function({aggregationDescription, documentBudgetaires}){
+
+    const aggregate = makeAggregateFunction(aggregationDescription)
+    const aggregatedDocumentBudgetaires = documentBudgetaires.map(aggregate)
+
+    const documentBudgetaire = documentBudgetaires[0];
+    const aggregatedDocumentBudgetaire = aggregatedDocumentBudgetaires[0];
+
     const unusedRows = documentBudgetaire ?
-        makeUnusedLigneBudgetSet(documentBudgetaire, aggregation).toJS() : 
+        makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) : 
         [];
     const rowsUsedMoreThanOnce = documentBudgetaire ?
-        makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregation) : 
+        makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) : 
         [];
 
     return html`
         <section>
             <h1>Analyse</h1>
             <p>Il y a ${documentBudgetaire && documentBudgetaire.rows.size} lignes dans le document budgetaire</p>
-            <p>Il y a ${aggregation.length} feuilles d'agrégation</p>
 
             <h2>Lignes non-utilisées (${unusedRows.length})</h2>
             <table>

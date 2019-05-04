@@ -14,6 +14,9 @@ function mapStateToProps({aggregationDescription, testedDocumentBudgetaire, mill
         selectedList: millerColumnSelection,
         aggregatedDocumentBudgetaire: aggregationDescription && testedDocumentBudgetaire && testedDocumentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ?
             makeAggregateFunction(aggregationDescription)(testedDocumentBudgetaire) :
+            undefined,
+        documentBudgetaire: testedDocumentBudgetaire && testedDocumentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ?
+            testedDocumentBudgetaire :
             undefined
     }
 }

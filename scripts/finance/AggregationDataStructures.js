@@ -80,7 +80,11 @@ export const AggregatedDocumentBudgetaire = Record({
     ...AggregatedDocumentBudgetaireNodeFields
 })
 
-
+export function getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire){
+    return aggregatedDocumentBudgetaire.children ?
+        aggregatedDocumentBudgetaire.children.valueSeq().map(getAggregatedDocumentBudgetaireLeaves).flatten() :
+        aggregatedDocumentBudgetaire
+}
 
 /*
     Function to compute the LigneBudget elements of a given node in the AggregatedDocumentBudgetaire tree
