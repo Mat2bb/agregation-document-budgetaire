@@ -17,7 +17,8 @@ function AggregationDescriptionLeafEditor({
     return html`
         <div class="formula-editor">
             <h1>${name} <small>(${id})</small></h1>
-            <div class="formula">
+            <div>
+                <strong>Formule</strong> <a class="help" target="_blank" href="./exemples_formules.html">?</a>
                 <input type="text" value=${formula} onInput=${e => onFormulaChange(e.target.value)} />
                 <table class="summary">
                     <tr>
