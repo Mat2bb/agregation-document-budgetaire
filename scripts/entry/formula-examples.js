@@ -51,8 +51,9 @@ function makeFilterFromParserOutput(parserOutput) {
 
             switch (operator) {
                 case '+':
+                case '∪':
                     return matchesComplex(r, left) || matchesComplex(r, right)
-                case '*':
+                case '∩': 
                     return matchesComplex(r, left) && matchesComplex(r, right)
                 case '-':
                     return matchesComplex(r, left) && !matchesComplex(r, right)
@@ -131,8 +132,6 @@ document.addEventListener('DOMContentLoaded', e => {
         input.addEventListener('input', e => {
             const formula = e.target.value.trim();
 
-            console.log()
-
             document.body.querySelector('output').replaceWith(
                 memzMakeOutputFromFormula(formula)
             )
@@ -184,23 +183,23 @@ document.addEventListener('DOMContentLoaded', e => {
             description: 'toutes les dépenses de fonctionnement'
         },
         {
-            formula: 'DF*F4',
+            formula: 'DF∩F4',
             description: 'toutes les dépenses de fonctionnement de la fonction 4'
         },
         {
-            formula: 'DF*(F4+F5)',
+            formula: 'DF∩(F4 ∪ F5)',
             description: 'toutes les dépenses de fonctionnement des fonctions 4 et 5'
         },
         {
-            formula: 'DF*(N64111+N6451)',
+            formula: 'DF∩(N64111 ∪ N6451)',
             description: 'toutes les dépenses de fonctionnement des natures 64111 et 6451 (salaire + URSSAF)'
         },
         {
-            formula: 'DF*(N64111+N6451)*F52',
+            formula: 'DF∩(N64111 ∪ N6451)∩F52',
             description: 'toutes les dépenses de fonctionnement salaires+URSSAF lié à la fonction 52 (Personnes handicapées)'
         },
         {
-            formula: 'RI*C16',
+            formula: 'RI∩C16',
             description: `toutes les recettes d'investissement du chapitre 16 (emprunts)`
         }
     ];
