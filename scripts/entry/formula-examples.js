@@ -33,7 +33,7 @@ function makeFilterFromParserOutput(parserOutput) {
         if (subset.startsWith('C'))
             return subset.slice(1) === r['Chapitre']
 
-        console.warn('matchesSubset - Unhandled case', subset);
+        console.warn('matchesSimple - Unhandled case', subset);
     }
 
 
@@ -58,11 +58,11 @@ function makeFilterFromParserOutput(parserOutput) {
                 case '-':
                     return matchesComplex(r, left) && !matchesComplex(r, right)
                 default:
-                    console.warn('matchesSubset - Unhandled case', operator, combo);
+                    console.warn('matchesComplex - Unhandled case', operator, combo);
             }
         }
 
-        console.warn('matchesSubset - Unhandled case', combo);
+        console.warn('matchesComplex - Unhandled case', combo);
     }
 
 
@@ -75,7 +75,7 @@ function makeFilterFromParserOutput(parserOutput) {
 function makeTable(rows, year) {
     return Bouture.section([
         Bouture.h1('CA Gironde ', year),
-        Bouture.h2(rows.length, ' elements | ', sum(rows.map(r => r['MtReal'])).toFixed(2) + '€'),
+        Bouture.h2(rows.size, ' elements | ', sum(rows.map(r => r['MtReal'])).toFixed(2) + '€'),
         Bouture.table([
             Bouture.thead.tr(['RD', 'FI', 'Fonction', 'Nature', 'Montant'].map(t => Bouture.th(t))),
             Bouture.tbody(
@@ -197,6 +197,10 @@ document.addEventListener('DOMContentLoaded', e => {
         {
             formula: 'DF∩(N64111 ∪ N6451)∩F52',
             description: 'toutes les dépenses de fonctionnement salaires+URSSAF lié à la fonction 52 (Personnes handicapées)'
+        },
+        {
+            formula: 'DF∩((F50∩(N64121 ∪ N64126)) ∪ (F51 - F51∩N6526))',
+            description: 'Gironde - social - enfance'
         },
         {
             formula: 'RI∩C16',
