@@ -8,7 +8,7 @@ export default function({aggregationDescription, aggregatedDocumentBudgetaire, d
     return html`
         <div>
             <${AggregationDescriptionEditor} ...${ {aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations} } />
-            <${AggregationAnalysis} ...${ {aggregationDescription, documentBudgetaires: [documentBudgetaire]} } />
+            <${AggregationAnalysis} ...${ {aggregationDescription, documentBudgetaires: documentBudgetaire ? [documentBudgetaire] : []} } />
         </div>
     `
 }

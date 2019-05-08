@@ -68,10 +68,14 @@ else{
 	})
 	.catch(console.error)
 
-	/*const formulas = getStoredState()
-	for(const {id, name, formula} of formulas){
-		store.mutations.addFormula({ id, name, formula })
-	}*/
+	// load stored aggregation description
+	const storedAggregationDescription = getStoredState()
+	console.log('storedAggregationDescription', storedAggregationDescription.toJS())
+
+	if(storedAggregationDescription){
+		store.mutations.aggregationDescription.set(storedAggregationDescription)
+	}
+
 }
 
 // UI render

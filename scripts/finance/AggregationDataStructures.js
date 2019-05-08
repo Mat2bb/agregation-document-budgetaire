@@ -1,4 +1,4 @@
-import { Record, Set as ImmutableSet } from 'immutable';
+import { Record, Set as ImmutableSet, OrderedMap } from 'immutable';
 import { sum } from 'd3-array';
 
 import memoize from 'fast-memoize'
@@ -9,7 +9,7 @@ import memoize from 'fast-memoize'
     The leaves contain a "formula" which acts like a filter on a DocumentBudgetaire
 
 interface AggregationDescription extends AggregationDescriptionNode, Readonly<{
-    children: OrderedSet<AggregationDescription | AggregationDescriptionLeaf>
+    children: OrderedMap<id, AggregationDescription | AggregationDescriptionLeaf>
 }>{}
 
 interface AggregationDescriptionNode extends Readonly<{
@@ -37,6 +37,24 @@ export const AggregationDescription = Record({
     children: undefined,
     ...AggregationDescriptionNodeFields
 })
+
+export function AggregationDescriptionToJSON(aggregationDescription){
+    const {id, name, formula, children} = aggregationDescription
+
+    return children ?
+        { id, name, children : children.valueSeq().toArray().map(AggregationDescriptionToJSON) } :
+        { id, name, formula } ;
+}
+
+export function AggregationDescriptionFromJSON(aggregationDescriptionJSON){
+    const {id, name, formula, children} = aggregationDescriptionJSON
+
+    return children ?
+        AggregationDescription(
+            { id, name, children: OrderedMap(children.map(c => [c.id, AggregationDescriptionFromJSON(c)])) }
+        ) :
+        AggregationDescriptionLeaf({ id, name, formula }) ;
+}
 
 
 /*
