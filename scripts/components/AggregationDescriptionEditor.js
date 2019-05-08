@@ -82,7 +82,7 @@ class MillerColumn extends Component {
                                     node.id === selectedChildId ? 'selected' : undefined,
                                     node.children ? 'subgroup' : 'formula'
                                 ].filter(x=>x).join(' ')} 
-                                onClick=${() => onNodeSelection(node.id === selectedChildId ? undefined : node.id)}
+                                onClick=${() => onNodeSelection(node.id)}
                             >
                                 ${node.name}
                             </li>`

@@ -59,7 +59,12 @@ export default new Store({
                 fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
             },
             selectNode(state, nodeId, index){
-                state.millerColumnSelection = state.millerColumnSelection.slice(0, index).push(nodeId)
+                if(state.millerColumnSelection.get(index) === nodeId){
+                    state.millerColumnSelection = state.millerColumnSelection.slice(0, index)
+                }
+                else{
+                    state.millerColumnSelection = state.millerColumnSelection.slice(0, index).push(nodeId)
+                }
             },
             changeFormula(state, node, newFormula){
                 const nodeFormulaKeyPath = aggregationDescriptionNodeToKeyPath.get(node).push('formula')
