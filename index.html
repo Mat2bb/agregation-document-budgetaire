@@ -3,7 +3,6 @@
     <head>
         <meta charset="utf-8">
         <meta name="referrer" content="same-origin">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         
         <title>Agrégations de lignes budgétaires</title>
         
@@ -12,9 +11,10 @@
         <script crossorigin="anonymous" src="https://cdn.polyfill.io/v2/polyfill.min.js"></script>
         <link rel="stylesheet" href="https://unpkg.com/bootstrap@4.3.1/dist/css/bootstrap-reboot.min.css" crossorigin="anonymous">
         
-        <script defer type=module src="./build/rollup-bundle.js"></script>
+        <script defer type="module" src="./build/rollup-bundle-main.js"></script>
 
         <style>
+
             main{
                 padding: 0 15%;
             }
@@ -23,35 +23,35 @@
                 text-align: center;
             }
 
-            table.agregation{
+            table.aggregation{
                 width: 100%;
             }
 
-            table.agregation > * > tr > td{
+            table.aggregation > * > tr > td{
                 vertical-align: top;
             }
 
-            table.agregation > * > tr > th:nth-child(1),
-            table.agregation > * > tr > td:nth-child(1){
+            table.aggregation > * > tr > th:nth-child(1),
+            table.aggregation > * > tr > td:nth-child(1){
                 max-width: 7em;
             }
 
-            table.agregation > * > tr > td:nth-child(2){
+            table.aggregation > * > tr > td:nth-child(2){
                 max-height: 5em;
                 overflow: scroll;
             }
             
-            table.agregation > * > tr > td:nth-child(4),
-            table.agregation > * > tr > td:nth-child(3){
+            table.aggregation > * > tr > td:nth-child(4),
+            table.aggregation > * > tr > td:nth-child(3){
                 text-align: right;
                 width: 9em;
             }
 
-            table.agregation > tbody > tr:nth-child(odd) > td{
+            table.aggregation > tbody > tr:nth-child(odd) > td{
                 background-color: #f5f5f5;
             }
 
-            table.agregation > * > tr > td input{
+            table.aggregation > * > tr > td input{
                 width: 100%;
             }
 
@@ -68,6 +68,124 @@
                 background-color: #f5f5f5;
             }
 
+            /* Miller columns */
+
+            label{
+                display:block;
+            }
+
+            label input{
+                margin: 0 0.5em;
+            }
+
+            .miller-columns .columns{
+                display: flex;
+                flex-direction: row;
+            }
+
+            .miller-columns ol{
+                display: flex;
+                flex-direction: column;
+                
+                width: 20vw;
+
+                margin: 0;
+                padding: 0;
+
+                list-style: none;
+            }
+
+            .miller-columns ol li{
+                padding: 0.5em;
+                text-align: center;
+                border: 1px solid #DDD;
+
+                cursor: pointer;
+
+                position: relative;
+            }
+
+            .miller-columns ol li.selected{
+                background-color: lightblue;
+            }
+
+            .miller-columns ol li::after{                
+                position: absolute;
+
+                right: 0;
+
+                font-family: sans serif;
+                font-size: 1.3em;
+                line-height: 100%;
+
+                padding-right: 0.5em;
+            }
+
+
+            .miller-columns ol li.formula::after{
+                content: "∩ ∪";
+            }
+
+            .miller-columns ol li.subgroup::after{
+                content: "⊃";
+            }
+
+
+            .formula-editor{
+                padding: 0 0.5em;
+                
+            }
+
+            .formula-editor h1{
+                text-align: center;
+            }
+            .formula-editor h1 small{
+                color: #999;
+            }
+
+            .formula-editor input{
+                width: 100%;
+                font-family: monospace;
+                font-size: 1.5em;
+            }
+
+            .formula-editor .summary{
+                width: 100%;
+            }
+            .formula-editor .summary tr td:nth-child(2){
+                text-align: right;
+                font-weight: bold;
+            }
+
+            .formula-editor a.help{
+                border: 1px solid #555;
+                border-radius: 50%;
+
+                display: inline-block;
+                width: 1.5em;
+                height: 1.5em;
+
+                text-align: center;
+                font-weight: bold;
+
+                margin-bottom: 0.3em;
+            }
+
+            .aggregation-description-import-export{
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            .aggregation-description-import-export > *{
+                flex: 1;
+            }
+        
+            .miller-columns h2,
+            .aggregation-description-import-export h2{
+                font-size: 1.25em;
+
+            }
 
         </style>
 

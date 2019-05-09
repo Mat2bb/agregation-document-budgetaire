@@ -24,7 +24,7 @@ function makeFormulaFromMontreuilRows(rows){
     return [...rowsByRDFI.entries()].map(([RDFI, rows]) => {
         const rowsFormula = rows.map(r => {
             // the two following lines seem to have weird characters in the property names
-            // I've copied-pasted the values from agregation-Montreuil-v4
+            // I've copied-pasted the values from aggregation-Montreuil-v4
             // if only rewriting by hand via easily-accessible keyboard keys, it does not work :-/
             const fonction = r["Fonction - Code"]
             const nature = r['Nature - Code']
