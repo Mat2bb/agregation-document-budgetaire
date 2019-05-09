@@ -135,33 +135,35 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
     const firstSelectedId = selectedList.first();
 
     return html`<section class="miller-columns">
-        <${MillerColumn} 
-            aggregationDescription=${aggregationDescription} 
-            selectedChildId=${firstSelectedId}
-            addChild=${childData => { addChild(aggregationDescription, childData) } }
-            onNodeSelection=${id => onNodeSelection(id, 0)},
-        />
-        ${
-            selectedList.map((id, i) => {
-                const keyPath = selectedList.slice(0, i+1).map(id => List(['children', id])).flatten()
+        <h2>Création/édition</h2>
+        <div class="columns">
+            <${MillerColumn} 
+                aggregationDescription=${aggregationDescription} 
+                selectedChildId=${firstSelectedId}
+                addChild=${childData => { addChild(aggregationDescription, childData) } }
+                onNodeSelection=${id => onNodeSelection(id, 0)},
+            />
+            ${
+                selectedList.map((id, i) => {
+                    const keyPath = selectedList.slice(0, i+1).map(id => List(['children', id])).flatten()
 
-                const node = aggregationDescription.getIn(keyPath)
+                    const node = aggregationDescription.getIn(keyPath)
 
-                return node.children ? 
-                    html`<${MillerColumn} 
-                        aggregationDescription=${node} 
-                        selectedChildId=${selectedList.get(i+1)}
-                        addChild=${childData => { addChild(node, childData) } }
-                        onNodeSelection=${id => onNodeSelection(id, i+1)},
-                    />` :
-                    html`<${AggregationDescriptionLeafEditor} 
-                        aggregationDescriptionLeaf=${node}
-                        aggregatedDocumentBudgetaireCorrespondingNode=${aggregatedDocumentBudgetaire.getIn(keyPath)}
-                        onFormulaChange=${formula => onFormulaChange(node, formula)}
-                    />`
-            }).toArray()
-
-        }
+                    return node.children ? 
+                        html`<${MillerColumn} 
+                            aggregationDescription=${node} 
+                            selectedChildId=${selectedList.get(i+1)}
+                            addChild=${childData => { addChild(node, childData) } }
+                            onNodeSelection=${id => onNodeSelection(id, i+1)},
+                        />` :
+                        html`<${AggregationDescriptionLeafEditor} 
+                            aggregationDescriptionLeaf=${node}
+                            aggregatedDocumentBudgetaireCorrespondingNode=${aggregatedDocumentBudgetaire.getIn(keyPath)}
+                            onFormulaChange=${formula => onFormulaChange(node, formula)}
+                        />`
+                }).toArray()
+            }
+        </div>
     </section>`
 }
 
