@@ -70,9 +70,9 @@ else{
 
 	// load stored aggregation description
 	const storedAggregationDescription = getStoredState()
-	console.log('storedAggregationDescription', storedAggregationDescription.toJS())
 
 	if(storedAggregationDescription){
+		console.log('storedAggregationDescription', storedAggregationDescription.toJS())
 		store.mutations.aggregationDescription.set(storedAggregationDescription)
 	}
 

@@ -23,7 +23,8 @@ export default function(store){
                 .then(store.mutations.testedDocumentBudgetaire.setValue)
                 .catch(store.mutations.testedDocumentBudgetaire.setError) 
             })
-        }
+        },
+        importAggregationDescription: store.mutations.aggregationDescription.set
     }
 
 }

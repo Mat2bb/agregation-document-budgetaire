@@ -1,7 +1,7 @@
 import { List } from 'immutable';
 import {h, Component} from 'preact'
 
-import {aggregatedDocumentBudgetaireNodeElements, aggregatedDocumentBudgetaireNodeTotal} from '../finance/AggregationDataStructures.js'
+import {aggregatedDocumentBudgetaireNodeElements, aggregatedDocumentBudgetaireNodeTotal, AggregationDescriptionFromJSON} from '../finance/AggregationDataStructures.js'
 
 
 function AggregationDescriptionLeafEditor({
@@ -166,12 +166,20 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
 }
 
 
-function AggregationDescriptionImportExport({aggregationDescription, triggerAggregationDescriptionDownload}){
+function AggregationDescriptionImportExport({triggerAggregationDescriptionDownload, importAggregationDescription}){
     return html`<section class="aggregation-description-import-export">
         <section class="import">
             <h2>Import</h2>
             Importer un fichier de description d'agrégation
-            <input type="file"/>
+            <input type="file" onChange=${(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.readAsText(file, "UTF-8");
+                    reader.onload = e => importAggregationDescription(AggregationDescriptionFromJSON(JSON.parse(e.target.result)));
+                    // TODO error case
+                }
+            }}/>
         </section>
         <section class="export">
             <h2>Export</h2>
@@ -182,11 +190,11 @@ function AggregationDescriptionImportExport({aggregationDescription, triggerAggr
 
 
 export default function(props){
-    const {aggregationDescription, triggerAggregationDescriptionDownload} = props
+    const {aggregationDescription, triggerAggregationDescriptionDownload, importAggregationDescription} = props
 
     return html`<section>
         <h1>Description d'aggrégation</h1>
-        <${AggregationDescriptionImportExport} ...${ {aggregationDescription, triggerAggregationDescriptionDownload} } />
+        <${AggregationDescriptionImportExport} ...${ {aggregationDescription, triggerAggregationDescriptionDownload, importAggregationDescription} } />
         <${MillerColumns} ...${props}/>
     </section>`
 }
