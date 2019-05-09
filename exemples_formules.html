@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta name="referrer" content="same-origin">
+        
+        <title>Formules d'agrégations de lignes budgétaires</title>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
+        <script crossorigin="anonymous" src="https://cdn.polyfill.io/v2/polyfill.min.js"></script>
+        <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/nearley@2.15.1/lib/nearley.min.js"></script>
+        <script crossorigin="anonymous" src="./scripts/DocumentBudgetaireQueryLanguage/grammar.js"></script>
+
+        <script defer type="module" src="./build/rollup-bundle-formula-examples.js"></script>
+
+        <link crossorigin="anonymous" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap-reboot.css">
+
+        <style>
+
+            body{
+                display: flex;
+                flex-direction: column;
+
+                align-items: center;
+            }
+
+            main{
+                display: flex;
+                flex-direction: column;
+
+                max-width: 60em;
+            }
+
+            input.formula{
+                width: 100%;
+                margin-bottom: 0.5em;
+
+                font-size: 1.6em;
+                font-family: monospace;
+            }
+
+
+            output{
+                background-color: #EEE;
+                white-space: pre;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-around;
+            }
+
+            output table tbody td{
+                padding: 0 0.5em;
+            }
+        
+            output table tbody td:nth-child(4),
+            output table tbody td:nth-child(5){
+                text-align: right;
+            }
+
+        </style>
+
+    </head>
+    <body>
+        <main>
+            <h1>Outil de test de formules</h1>
+            <h2>Un outil pour filtrer les lignes d'un document budgétaires</h2>
+            <p>Pour le moment, cet outil ne filtre que les données des <a href="https://www.datalocale.fr/dataset/comptes-administratifs-budget-principal-donnees-budgetaires-du-departement-de-la-gironde">Comptes Administratifs du Département de la Gironde</a> pour l'année 2017</p>
+
+            <h2>Exemples de formules</h2>
+            <ul class="examples"></ul>     
+            
+            <input class="formula" type="text">
+            <output></output>   
+        </main>
+
+    </body>
+</html>

@@ -8,12 +8,13 @@ main -> _ AS _      {% ts => ts[1] %}
 P -> "(" _ AS _ ")"     {% ts => ts.filter(x => !!x) %}
     | SUBSET            {% id %}
 
-# Multiplication
-M -> M _ "*" _ P    {% ts => ts.filter(x => !!x) %}
+# Intersection
+M -> M _ "∩" _ P    {% ts => ts.filter(x => !!x) %}
     | P             {% id %}
 
-# Addition and subtraction
+# Union and subtraction 
 AS -> AS _ "+" _ M  {% ts => ts.filter(x => !!x) %}
+    | AS _ "∪" _ M  {% ts => ts.filter(x => !!x) %}
     | AS _ "-" _ M  {% ts => ts.filter(x => !!x) %}
     | M             {% id %}
 

@@ -31,12 +31,16 @@ export default function({documentBudgetaire, onNewDocumentBudgetaireText}){
             <section>
                 <h2>Documents Budgétaires</h2>
                 ${
-                    documentBudgetaire ?
                         html`
                             <div>
-                                ${documentBudgetaire["LibelleColl"]} - ${documentBudgetaire["Nomenclature"]} - ${documentBudgetaire["Exer"]}
+                                Document budgétaire chargé : 
+                                ${
+                                    documentBudgetaire ? 
+                                        ` ${documentBudgetaire["LibelleColl"]} - ${documentBudgetaire["Nomenclature"]} - ${documentBudgetaire["Exer"]}` : 
+                                        ' (aucun)'
+                                }
                             </div>
-                        ` : undefined
+                        `
                 }
 
                 <${DocumentBudgetaireInput} onNewDocumentBudgetaireText=${onNewDocumentBudgetaireText} />
