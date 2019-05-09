@@ -130,7 +130,7 @@ class MillerColumn extends Component {
 }
 
 // https://en.wikipedia.org/wiki/Miller_columns
-export default function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations: {addChild, selectNode: onNodeSelection, changeFormula: onFormulaChange}}){
+function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations: {addChild, selectNode: onNodeSelection, changeFormula: onFormulaChange}}){
 
     const firstSelectedId = selectedList.first();
 
@@ -162,5 +162,31 @@ export default function MillerColumns({aggregationDescription, aggregatedDocumen
             }).toArray()
 
         }
+    </section>`
+}
+
+
+function AggregationDescriptionImportExport({aggregationDescription, triggerAggregationDescriptionDownload}){
+    return html`<section class="aggregation-description-import-export">
+        <section class="import">
+            <h2>Import</h2>
+            Importer un fichier de description d'agrégation
+            <input type="file"/>
+        </section>
+        <section class="export">
+            <h2>Export</h2>
+            <button onClick=${triggerAggregationDescriptionDownload}>Exporter au format JSON</button>
+        </section>
+    </section>`
+}
+
+
+export default function(props){
+    const {aggregationDescription, triggerAggregationDescriptionDownload} = props
+
+    return html`<section>
+        <h1>Description d'aggrégation</h1>
+        <${AggregationDescriptionImportExport} ...${ {aggregationDescription, triggerAggregationDescriptionDownload} } />
+        <${MillerColumns} ...${props}/>
     </section>`
 }
