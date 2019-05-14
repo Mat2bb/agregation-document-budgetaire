@@ -45,8 +45,9 @@ function matchesComplex(r, combo) {
     
         switch (operator) {
             case '+':
+            case '∪':
                 return matchesComplex(r, left) || matchesComplex(r, right)
-            case '*':
+            case '∩':
                 return matchesComplex(r, left) && matchesComplex(r, right)
             case '-':
                 return matchesComplex(r, left) && !matchesComplex(r, right)
