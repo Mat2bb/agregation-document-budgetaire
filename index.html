@@ -135,7 +135,7 @@
             }
 
 
-            .miller-columns ol li button.delete,
+            .miller-columns ol li button.edit,
             .miller-columns ol li button.add{
                 padding: 0;
                 margin: 0;
@@ -151,17 +151,22 @@
                 border-radius: 50%;
             }
 
-            .miller-columns ol li button.delete{
-                color: #dc3545;
-
+            .miller-columns ol li button.edit{
                 position: absolute;
                 left: 0.5em;
+
+                transform: scaleX(-1);
             }
 
             .miller-columns ol li button.add{
                 color: #28a745;
             }
 
+            .miller-columns ol li button.delete{
+                margin-top: 2em;
+                color: white;
+                background-color: #dc3545;
+            }
 
 
             .formula-editor{
