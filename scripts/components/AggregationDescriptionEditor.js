@@ -70,21 +70,31 @@ class MillerColumn extends Component {
         this.state = {adding: false};
     }
 
-    render({aggregationDescription, addChild, onNodeSelection, selectedChildId}, {adding}) {
+    render({aggregationDescription, addChild, removeChild, onNodeSelection, selectedChildId, isLast}, {adding}) {
 
         return (
             html`<ol>
                 ${
                     aggregationDescription.children.valueSeq().map(node => {
+                        const isSelected = node.id === selectedChildId
+
+                        console.log('isSelected && isLast', isSelected, isLast)
+
                         return html`
                             <li 
                                 class=${[
-                                    node.id === selectedChildId ? 'selected' : undefined,
+                                    isSelected ? 'selected' : undefined,
                                     node.children ? 'subgroup' : 'formula'
                                 ].filter(x=>x).join(' ')} 
                                 onClick=${() => onNodeSelection(node.id)}
                             >
-                                ${node.name}
+                                ${
+                                    isSelected && isLast ? 
+                                        html`<button title="Supprimer ${node.name} et ses descendants" class="delete" onClick=${() => removeChild(node)}>x</button>` :
+                                        undefined
+                                }
+
+                                <span>${node.name}</span>
                             </li>`
                     }).toArray()
                 }
@@ -121,7 +131,7 @@ class MillerColumn extends Component {
                                 <button type="submit">ok</button>
                                 <button type="button" onClick=${() => this.setState({adding: false})}>annuler</button>
                             </form>` : 
-                            html`<button onClick=${() => this.setState({adding: true})}>+</button>`
+                            html`<button class="add" title="Rajouter un élément" onClick=${() => this.setState({adding: true})}>+</button>`
                     }
                 </li>
             </ol>`
@@ -130,7 +140,7 @@ class MillerColumn extends Component {
 }
 
 // https://en.wikipedia.org/wiki/Miller_columns
-function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations: {addChild, selectNode: onNodeSelection, changeFormula: onFormulaChange}}){
+function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations: {addChild, removeChild, selectNode: onNodeSelection, changeFormula: onFormulaChange}}){
 
     const firstSelectedId = selectedList.first();
 
@@ -140,7 +150,9 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
             <${MillerColumn} 
                 aggregationDescription=${aggregationDescription} 
                 selectedChildId=${firstSelectedId}
+                isLast=${selectedList.size === 1}
                 addChild=${childData => { addChild(aggregationDescription, childData) } }
+                removeChild=${child => { removeChild(aggregationDescription, child) }}
                 onNodeSelection=${id => onNodeSelection(id, 0)},
             />
             ${
@@ -153,7 +165,9 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
                         html`<${MillerColumn} 
                             aggregationDescription=${node} 
                             selectedChildId=${selectedList.get(i+1)}
+                            isLast=${i === selectedList.size - 2}
                             addChild=${childData => { addChild(node, childData) } }
+                            removeChild=${child => { removeChild(node, child) }}
                             onNodeSelection=${id => onNodeSelection(id, i+1)},
                         />` :
                         html`<${AggregationDescriptionLeafEditor} 

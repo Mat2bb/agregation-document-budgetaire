@@ -58,6 +58,13 @@ export default new Store({
                 state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode)
                 fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
             },
+            removeChild(state, parent, child){
+                const parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent)
+                const toDeletePath = parentKeyPath.push('children', child.id)
+
+                state.aggregationDescription = state.aggregationDescription.deleteIn(toDeletePath)
+                fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
+            },
             selectNode(state, nodeId, index){
                 if(state.millerColumnSelection.get(index) === nodeId){
                     state.millerColumnSelection = state.millerColumnSelection.slice(0, index)
