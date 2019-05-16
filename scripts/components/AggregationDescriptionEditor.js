@@ -5,14 +5,9 @@ import {aggregatedDocumentBudgetaireNodeElements, aggregatedDocumentBudgetaireNo
 
 
 function AggregationDescriptionLeafEditor({
-    aggregationDescriptionLeaf, aggregatedDocumentBudgetaireCorrespondingNode, onIdChange, onNameChange, onFormulaChange
+    aggregationDescriptionLeaf, aggregatedDocumentBudgetaireCorrespondingNode, onFormulaChange
 }){
     const {id, name, formula} = aggregationDescriptionLeaf
-
-    /*
-        <input type="text" value=${id} onInput=${onIdChange} />
-        <input type="text" value=${name} onInput=${onNameChange} />
-    */
 
     return html`
         <div class="formula-editor">
@@ -33,7 +28,7 @@ function AggregationDescriptionLeafEditor({
                         <td>Total</td>
                         <td class="money-amount">
                             <strong>
-                            ${aggregatedDocumentBudgetaireNodeTotal(aggregatedDocumentBudgetaireCorrespondingNode).toFixed(2)+'€'}
+                            ${aggregatedDocumentBudgetaireNodeTotal(aggregatedDocumentBudgetaireCorrespondingNode).toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}
                             </strong>
                         </td>
                     </tr>
@@ -46,13 +41,14 @@ function AggregationDescriptionLeafEditor({
                     </thead>
                     <tbody>
                         ${
-                            aggregatedDocumentBudgetaireCorrespondingNode.elements.toArray().map(r => {
+                            aggregatedDocumentBudgetaireCorrespondingNode.elements
+                                .toArray().sort((r1, r2) => r2['MtReal'] - r1['MtReal']).map(r => {
                                 return html`
                                     <tr>
                                         <td>${r['CodRD']+r['FI']}</td>
                                         <td>${r['Fonction']}</td>
                                         <td>${r['Nature']}</td>
-                                        <td class="money-amount">${r['MtReal'].toFixed(2)+'€'}</td>
+                                        <td class="money-amount">${r['MtReal'].toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}</td>
                                     </tr>`
                             })
                         }      
