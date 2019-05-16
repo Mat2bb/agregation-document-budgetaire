@@ -86,7 +86,7 @@ class MillerColumn extends Component {
                                 <li 
                                     class=${[
                                         isSelected ? 'selected' : undefined,
-                                        node.children ? 'subgroup' : 'formula'
+                                        node.children ? 'group' : 'formula'
                                     ].filter(x=>x).join(' ')} 
                                     onClick=${() => onNodeSelection(node.id)}
                                 >
@@ -135,8 +135,8 @@ class MillerColumn extends Component {
                                 <section>
                                     Type
                                     <label>
-                                        <input defaultChecked=${editingNode ? editingNode.children : true} type="radio" name="type" value="subgroup"/>
-                                        Sous-groupe
+                                        <input defaultChecked=${editingNode ? editingNode.children : true} type="radio" name="type" value="group"/>
+                                        Groupe
                                     </label>
                                     <label>
                                         <input defaultChecked=${editingNode && ('formula' in editingNode)}  type="radio" name="type" value="formula"/>
