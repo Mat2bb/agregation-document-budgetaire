@@ -3,7 +3,7 @@ import memoize from 'fast-memoize'
 
 import grammar from './grammar.js'
 
-function matchesSimple(r, subset) {
+function matchesSimple(r, year, subset) {
 
     switch (subset) {
         case 'R':
@@ -25,32 +25,34 @@ function matchesSimple(r, subset) {
         return r['Fonction'].startsWith(subset.slice(1))
     if (subset.startsWith('C'))
         return subset.slice(1) === r['Chapitre']
+    if (subset.startsWith('Ann'))
+        return subset.slice('Ann'.length) === String(year)
 
     console.warn('matchesSubset - Unhandled case', subset);
 }
 
-function matchesComplex(r, combo) {
+function matchesComplex(r, year, combo) {
 
     if (typeof combo === 'string')
-        return matchesSimple(r, combo);
+        return matchesSimple(r, year, combo);
     
     // assert(Array.isArray(combo))
 
     const [left, middle, right] = combo;
     
     if (left === '(' && right === ')')
-        return matchesComplex(r, middle)
+        return matchesComplex(r, year, middle)
     else {
         const operator = middle;
     
         switch (operator) {
             case '+':
             case '∪':
-                return matchesComplex(r, left) || matchesComplex(r, right)
+                return matchesComplex(r, year, left) || matchesComplex(r, year, right)
             case '∩':
-                return matchesComplex(r, left) && matchesComplex(r, right)
+                return matchesComplex(r, year, left) && matchesComplex(r, year, right)
             case '-':
-                return matchesComplex(r, left) && !matchesComplex(r, right)
+                return matchesComplex(r, year, left) && !matchesComplex(r, year, right)
             default:
                 console.warn('matchesSubset - Unhandled case', operator, combo);
         }
@@ -64,7 +66,7 @@ const returnFalseFunction = Object.freeze(() => false);
 /*
     returns a function that can be used in the context of a documentBudgetaire.rows.filter()
 */
-export default memoize(function makeLigneBudgetFilterFromFormula(formula) {
+export default memoize(function makeLigneBudgetFilterFromFormula(formula, year) {
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
     try{
@@ -73,7 +75,7 @@ export default memoize(function makeLigneBudgetFilterFromFormula(formula) {
         if(parser.results[0] === undefined)
             return returnFalseFunction
         else
-            return memoize(budgetRow => matchesComplex(budgetRow, parser.results[0]))
+            return memoize(budgetRow => matchesComplex(budgetRow, year, parser.results[0]))
     }
     catch(e){
         return returnFalseFunction
