@@ -7593,6 +7593,10 @@ var grammar = createCommonjsModule(function (module) {
         "symbols": ["FONCTION"],
         "postprocess": id
       }, {
+        "name": "SUBSET",
+        "symbols": ["ANNEE"],
+        "postprocess": id
+      }, {
         "name": "RD",
         "symbols": [{
           "literal": "R"
@@ -7674,6 +7678,33 @@ var grammar = createCommonjsModule(function (module) {
           return ts[0] + ts[1].join('');
         }
       }, {
+        "name": "ANNEE$string$1",
+        "symbols": [{
+          "literal": "A"
+        }, {
+          "literal": "n"
+        }, {
+          "literal": "n"
+        }],
+        "postprocess": function joiner(d) {
+          return d.join('');
+        }
+      }, {
+        "name": "ANNEE$ebnf$1",
+        "symbols": [/[0-9]/]
+      }, {
+        "name": "ANNEE$ebnf$1",
+        "symbols": ["ANNEE$ebnf$1", /[0-9]/],
+        "postprocess": function arrpush(d) {
+          return d[0].concat([d[1]]);
+        }
+      }, {
+        "name": "ANNEE",
+        "symbols": ["ANNEE$string$1", "ANNEE$ebnf$1"],
+        "postprocess": function postprocess(ts) {
+          return ts[0] + ts[1].join('');
+        }
+      }, {
         "name": "_$ebnf$1",
         "symbols": []
       }, {
@@ -7698,7 +7729,7 @@ var grammar = createCommonjsModule(function (module) {
   })();
 });
 
-function matchesSimple(r, subset) {
+function matchesSimple(r, year, subset) {
   switch (subset) {
     case 'R':
     case 'D':
@@ -7718,30 +7749,31 @@ function matchesSimple(r, subset) {
   if (subset.startsWith('N')) return subset.slice(1) === r['Nature'];
   if (subset.startsWith('F')) return r['Fonction'].startsWith(subset.slice(1));
   if (subset.startsWith('C')) return subset.slice(1) === r['Chapitre'];
+  if (subset.startsWith('Ann')) return subset.slice('Ann'.length) === String(year);
   console.warn('matchesSubset - Unhandled case', subset);
 }
 
-function matchesComplex(r, combo) {
-  if (typeof combo === 'string') return matchesSimple(r, combo); // assert(Array.isArray(combo))
+function matchesComplex(r, year, combo) {
+  if (typeof combo === 'string') return matchesSimple(r, year, combo); // assert(Array.isArray(combo))
 
   var _combo = _slicedToArray(combo, 3),
       left = _combo[0],
       middle = _combo[1],
       right = _combo[2];
 
-  if (left === '(' && right === ')') return matchesComplex(r, middle);else {
+  if (left === '(' && right === ')') return matchesComplex(r, year, middle);else {
     var operator = middle;
 
     switch (operator) {
       case '+':
       case '∪':
-        return matchesComplex(r, left) || matchesComplex(r, right);
+        return matchesComplex(r, year, left) || matchesComplex(r, year, right);
 
       case '∩':
-        return matchesComplex(r, left) && matchesComplex(r, right);
+        return matchesComplex(r, year, left) && matchesComplex(r, year, right);
 
       case '-':
-        return matchesComplex(r, left) && !matchesComplex(r, right);
+        return matchesComplex(r, year, left) && !matchesComplex(r, year, right);
 
       default:
         console.warn('matchesSubset - Unhandled case', operator, combo);
@@ -7757,13 +7789,13 @@ var returnFalseFunction = Object.freeze(function () {
     returns a function that can be used in the context of a documentBudgetaire.rows.filter()
 */
 
-var makeLigneBudgetFilterFromFormula = src(function makeLigneBudgetFilterFromFormula(formula) {
+var makeLigneBudgetFilterFromFormula = src(function makeLigneBudgetFilterFromFormula(formula, year) {
   var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
   try {
     parser.feed(formula);
     if (parser.results[0] === undefined) return returnFalseFunction;else return src(function (budgetRow) {
-      return matchesComplex(budgetRow, parser.results[0]);
+      return matchesComplex(budgetRow, year, parser.results[0]);
     });
   } catch (e) {
     return returnFalseFunction;
@@ -7787,7 +7819,7 @@ function makeAggregateFunction(aggregationDescription) {
     AggregatedDocumentBudgetaireLeaf({
       id: id,
       name: name,
-      elements: documentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula))
+      elements: documentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula, documentBudgetaire.Exer))
     });
   }
 
@@ -7949,7 +7981,8 @@ function (_Component) {
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(MillerColumn).call(this, props));
     _this.state = {
-      adding: false
+      adding: false,
+      editingNode: undefined
     };
     return _this;
   }
@@ -7961,52 +7994,95 @@ function (_Component) {
 
       var aggregationDescription = _ref2.aggregationDescription,
           addChild = _ref2.addChild,
+          editChild = _ref2.editChild,
+          removeChild = _ref2.removeChild,
           onNodeSelection = _ref2.onNodeSelection,
-          selectedChildId = _ref2.selectedChildId;
-      var adding = _ref3.adding;
-      return h("ol", null, aggregationDescription.children.valueSeq().map(function (node) {
-        return h("li", {
-          class: [node.id === selectedChildId ? 'selected' : undefined, node.children ? 'subgroup' : 'formula'].filter(function (x) {
+          selectedChildId = _ref2.selectedChildId,
+          isLast = _ref2.isLast;
+      var adding = _ref3.adding,
+          editingNode = _ref3.editingNode;
+      return h("ol", null, aggregationDescription.children.valueSeq().toArray().map(function (node) {
+        var isSelected = node.id === selectedChildId;
+        return !editingNode || editingNode.id !== node.id ? h("li", {
+          class: [isSelected ? 'selected' : undefined, node.children ? 'subgroup' : 'formula'].filter(function (x) {
             return x;
           }).join(' '),
           onClick: function onClick() {
             return onNodeSelection(node.id);
           }
-        }, node.name);
-      }).toArray(), h("li", null, adding ? h("form", {
+        }, isSelected && isLast ? h("button", {
+          title: "\xC9diter",
+          class: "edit",
+          onClick: function onClick() {
+            return _this2.setState({
+              editingNode: node
+            });
+          }
+        }, "\u270E") : undefined, h("span", null, node.name)) : undefined;
+      }), h("li", null, adding || editingNode ? h("form", {
         onSubmit: function onSubmit(e) {
           e.preventDefault();
-          addChild({
+          var childData = {
             id: e.target.querySelector('input[name="id"]').value,
             name: e.target.querySelector('input[name="name"]').value,
             type: e.target.querySelector('input[name="type"]:checked').value
+          };
+
+          if (editingNode) {
+            editChild(editingNode, childData);
+          } else {
+            // adding
+            addChild(childData);
+          }
+
+          _this2.setState({
+            adding: false,
+            editingNode: undefined
           });
         }
       }, h("label", null, "Identifiant", h("input", {
         autocomplete: "off",
-        name: "id"
+        name: "id",
+        defaultValue: editingNode && editingNode.id
       })), h("label", null, "Nom", h("input", {
         autocomplete: "off",
-        name: "name"
+        name: "name",
+        defaultValue: editingNode && editingNode.name
       })), h("section", null, "Type", h("label", null, h("input", {
-        defaultChecked: true,
+        defaultChecked: editingNode ? editingNode.children : true,
         type: "radio",
         name: "type",
         value: "subgroup"
       }), "Sous-groupe"), h("label", null, h("input", {
+        defaultChecked: editingNode && 'formula' in editingNode,
         type: "radio",
         name: "type",
         value: "formula"
-      }), "Formule")), h("button", {
+      }), "Formule")), h("section", null, h("button", {
         type: "submit"
       }, "ok"), h("button", {
         type: "button",
         onClick: function onClick() {
           return _this2.setState({
-            adding: false
+            adding: false,
+            editingNode: undefined
           });
         }
-      }, "annuler")) : h("button", {
+      }, "annuler")), editingNode ? h("button", {
+        type: "button",
+        class: "delete",
+        title: "Supprimer",
+        onClick: function onClick() {
+          removeChild(editingNode);
+
+          _this2.setState({
+            adding: false,
+            editingNode: undefined
+          });
+        }
+      }, "Supprimer") : undefined) : h("button", {
+        class: "add",
+        title: "Rajouter un \xE9l\xE9ment",
         onClick: function onClick() {
           return _this2.setState({
             adding: true
@@ -8026,6 +8102,8 @@ function MillerColumns(_ref4) {
       selectedList = _ref4.selectedList,
       _ref4$aggregationDesc = _ref4.aggregationDescriptionMutations,
       _addChild = _ref4$aggregationDesc.addChild,
+      _removeChild = _ref4$aggregationDesc.removeChild,
+      _editChild = _ref4$aggregationDesc.editChild,
       _onNodeSelection = _ref4$aggregationDesc.selectNode,
       _onFormulaChange = _ref4$aggregationDesc.changeFormula;
   var firstSelectedId = selectedList.first();
@@ -8036,8 +8114,15 @@ function MillerColumns(_ref4) {
   }, h(MillerColumn, {
     aggregationDescription: aggregationDescription,
     selectedChildId: firstSelectedId,
+    isLast: selectedList.size === 1,
     addChild: function addChild(childData) {
       _addChild(aggregationDescription, childData);
+    },
+    editChild: function editChild(node, childData) {
+      return _editChild(aggregationDescription, node, childData);
+    },
+    removeChild: function removeChild(child) {
+      _removeChild(aggregationDescription, child);
     },
     onNodeSelection: function onNodeSelection(id) {
       return _onNodeSelection(id, 0);
@@ -8050,8 +8135,15 @@ function MillerColumns(_ref4) {
     return node.children ? h(MillerColumn, {
       aggregationDescription: node,
       selectedChildId: selectedList.get(i + 1),
+      isLast: i === selectedList.size - 2,
       addChild: function addChild(childData) {
         _addChild(node, childData);
+      },
+      editChild: function editChild(currentChild, childData) {
+        return _editChild(node, currentChild, childData);
+      },
+      removeChild: function removeChild(child) {
+        _removeChild(node, child);
       },
       onNodeSelection: function onNodeSelection(id) {
         return _onNodeSelection(id, i + 1);
@@ -8380,6 +8472,44 @@ var store = new Store({
         var nodeKeyPath = parentKeyPath.push('children', id);
         aggregationDescriptionNodeToKeyPath.set(newNode, nodeKeyPath);
         state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode);
+        fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription);
+      },
+      editChild: function editChild(state, parent, currentChild, newChildData) {
+        var name = newChildData.name,
+            type = newChildData.type,
+            id = newChildData.id;
+        var formula = currentChild.formula,
+            children = currentChild.children;
+        var parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent);
+        var childKeyPath = parentKeyPath.push('children', id);
+        var newNode = type === 'subgroup' ? new AggregationDescription({
+          id: id,
+          name: name,
+          children: children || new OrderedMap()
+        }) : new AggregationDescriptionLeaf({
+          id: id,
+          name: name,
+          formula: formula || ''
+        });
+
+        if (currentChild.id === newChildData.id) {
+          state.aggregationDescription = state.aggregationDescription.setIn(childKeyPath, newNode);
+        } else {
+          state.aggregationDescription = state.aggregationDescription.deleteIn(parentKeyPath.push('children', currentChild.id)).setIn(childKeyPath, newNode);
+          state.millerColumnSelection = state.millerColumnSelection.set(state.millerColumnSelection.findIndex(function (id) {
+            return id === currentChild.id;
+          }), id);
+        }
+
+        fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription);
+      },
+      removeChild: function removeChild(state, parent, child) {
+        var parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent);
+        var toDeletePath = parentKeyPath.push('children', child.id);
+        state.millerColumnSelection = state.millerColumnSelection.slice(0, state.millerColumnSelection.findIndex(function (id) {
+          return id === child.id;
+        }));
+        state.aggregationDescription = state.aggregationDescription.deleteIn(toDeletePath);
         fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription);
       },
       selectNode: function selectNode(state, nodeId, index) {

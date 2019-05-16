@@ -26,6 +26,7 @@ SUBSET -> RD        {% id %}
     | CHAPITRE      {% id %}
     | NATURE        {% id %}
     | FONCTION      {% id %}
+    | ANNEE         {% id %}
 
 RD -> "R"   {% id %}
     | "D"   {% id %}
@@ -42,6 +43,8 @@ CHAPITRE -> "C" [0-9]:+         {% ts => ts[0]+ts[1].join('') %}
 NATURE -> "N" [0-9]:+           {% ts => ts[0]+ts[1].join('') %}
 
 FONCTION -> "F" [0-9]:+         {% ts => ts[0]+ts[1].join('') %}
+
+ANNEE -> "Ann" [0-9]:+          {% ts => ts[0]+ts[1].join('') %}
 
 
 # Whitespace

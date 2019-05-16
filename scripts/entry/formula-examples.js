@@ -5,72 +5,8 @@ import { xml } from 'd3-fetch';
 
 import makeNatureToChapitreFI from '../finance/makeNatureToChapitreFI.js'
 import xmlDocumentToDocumentBudgetaire from '../finance/xmlDocumentToDocumentBudgetaire.js'
+import makeLigneBudgetFilterFromFormula from '../DocumentBudgetaireQueryLanguage/makeLigneBudgetFilterFromFormula.js'
 
-
-function makeFilterFromParserOutput(parserOutput) {
-
-    function matchesSimple(r, subset) {
-        switch (subset) {
-            case 'R':
-            case 'D':
-                return r['CodRD'] === subset;
-            case 'F':
-            case 'I':
-                return r['FI'] === subset;
-            case 'RF':
-            case 'RI':
-            case 'DF':
-            case 'DI':
-                return r['CodRD'] === subset[0] && r['FI'] === subset[1];
-        }
-
-        if (subset.startsWith('N'))
-            return subset.slice(1) === r['Nature']
-
-        if (subset.startsWith('F'))
-            return r['Fonction'].startsWith(subset.slice(1))
-
-        if (subset.startsWith('C'))
-            return subset.slice(1) === r['Chapitre']
-
-        console.warn('matchesSimple - Unhandled case', subset);
-    }
-
-
-    function matchesComplex(r, combo) {
-        if (typeof combo === 'string')
-            return matchesSimple(r, combo);
-
-        // Array.isArray(combo)
-        const [left, middle, right] = combo;
-
-        if (left === '(' && right === ')')
-            return matchesComplex(r, middle)
-        else {
-            const operator = middle;
-
-            switch (operator) {
-                case '+':
-                case '∪':
-                    return matchesComplex(r, left) || matchesComplex(r, right)
-                case '∩': 
-                    return matchesComplex(r, left) && matchesComplex(r, right)
-                case '-':
-                    return matchesComplex(r, left) && !matchesComplex(r, right)
-                default:
-                    console.warn('matchesComplex - Unhandled case', operator, combo);
-            }
-        }
-
-        console.warn('matchesComplex - Unhandled case', combo);
-    }
-
-
-    return function (r) {
-        return matchesComplex(r, parserOutput[0])
-    }
-
-}
 
 function makeTable(rows, year) {
     return Bouture.section([
@@ -80,8 +16,6 @@ function makeTable(rows, year) {
             Bouture.thead.tr(['RD', 'FI', 'Fonction', 'Nature', 'Montant'].map(t => Bouture.th(t))),
             Bouture.tbody(
                 rows.map(r => {
-                    console.log('r', r.toJS())
-
                     return Bouture.tr([
                         Bouture.td(r['CodRD']),
                         Bouture.td(r['FI']),
@@ -113,12 +47,8 @@ document.addEventListener('DOMContentLoaded', e => {
 
     docBudgP.then(docBudg => {
 
-        function makeOutputFromFormula(formula) {
-            const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-
-            parser.feed(formula);
-
-            const filter = makeFilterFromParserOutput(parser.results);
+        function makeOutputFromFormula(formula, year) {
+            const filter = makeLigneBudgetFilterFromFormula(formula, year)
 
             return Bouture.output(
                 [ makeTable(docBudg['rows'].filter(filter), docBudg['Exer']) ]
@@ -133,7 +63,7 @@ document.addEventListener('DOMContentLoaded', e => {
             const formula = e.target.value.trim();
 
             document.body.querySelector('output').replaceWith(
-                memzMakeOutputFromFormula(formula)
+                memzMakeOutputFromFormula(formula, docBudg.Exer)
             )
 
             // save in hash if formula stayed unchanged for 3secs
@@ -205,6 +135,10 @@ document.addEventListener('DOMContentLoaded', e => {
         {
             formula: 'RI∩C16',
             description: `toutes les recettes d'investissement du chapitre 16 (emprunts)`
+        },
+        {
+            formula: 'RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)',
+            description: `Gironde - recettes de fonctionnement - Conférence des financeurs`
         }
     ];
 

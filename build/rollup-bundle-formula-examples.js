@@ -6144,63 +6144,728 @@ function xmlDocumentToDocumentBudgetaire (doc, natureToChapitreFI) {
   });
 }
 
-function makeFilterFromParserOutput(parserOutput) {
-  function matchesSimple(r, subset) {
-    switch (subset) {
-      case 'R':
-      case 'D':
-        return r['CodRD'] === subset;
+var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
-      case 'F':
-      case 'I':
-        return r['FI'] === subset;
-
-      case 'RF':
-      case 'RI':
-      case 'DF':
-      case 'DI':
-        return r['CodRD'] === subset[0] && r['FI'] === subset[1];
-    }
-
-    if (subset.startsWith('N')) return subset.slice(1) === r['Nature'];
-    if (subset.startsWith('F')) return r['Fonction'].startsWith(subset.slice(1));
-    if (subset.startsWith('C')) return subset.slice(1) === r['Chapitre'];
-    console.warn('matchesSimple - Unhandled case', subset);
-  }
-
-  function matchesComplex(r, combo) {
-    if (typeof combo === 'string') return matchesSimple(r, combo); // Array.isArray(combo)
-
-    var _combo = _slicedToArray(combo, 3),
-        left = _combo[0],
-        middle = _combo[1],
-        right = _combo[2];
-
-    if (left === '(' && right === ')') return matchesComplex(r, middle);else {
-      var operator = middle;
-
-      switch (operator) {
-        case '+':
-        case '∪':
-          return matchesComplex(r, left) || matchesComplex(r, right);
-
-        case '∩':
-          return matchesComplex(r, left) && matchesComplex(r, right);
-
-        case '-':
-          return matchesComplex(r, left) && !matchesComplex(r, right);
-
-        default:
-          console.warn('matchesComplex - Unhandled case', operator, combo);
-      }
-    }
-    console.warn('matchesComplex - Unhandled case', combo);
-  }
-
-  return function (r) {
-    return matchesComplex(r, parserOutput[0]);
-  };
+function createCommonjsModule(fn, module) {
+	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
+
+var nearley = createCommonjsModule(function (module) {
+  (function (root, factory) {
+    if (module.exports) {
+      module.exports = factory();
+    } else {
+      root.nearley = factory();
+    }
+  })(commonjsGlobal, function () {
+    function Rule(name, symbols, postprocess) {
+      this.id = ++Rule.highestId;
+      this.name = name;
+      this.symbols = symbols; // a list of literal | regex class | nonterminal
+
+      this.postprocess = postprocess;
+      return this;
+    }
+
+    Rule.highestId = 0;
+
+    Rule.prototype.toString = function (withCursorAt) {
+      function stringifySymbolSequence(e) {
+        return e.literal ? JSON.stringify(e.literal) : e.type ? '%' + e.type : e.toString();
+      }
+
+      var symbolSequence = typeof withCursorAt === "undefined" ? this.symbols.map(stringifySymbolSequence).join(' ') : this.symbols.slice(0, withCursorAt).map(stringifySymbolSequence).join(' ') + " ● " + this.symbols.slice(withCursorAt).map(stringifySymbolSequence).join(' ');
+      return this.name + " → " + symbolSequence;
+    }; // a State is a rule at a position from a given starting point in the input stream (reference)
+
+
+    function State(rule, dot, reference, wantedBy) {
+      this.rule = rule;
+      this.dot = dot;
+      this.reference = reference;
+      this.data = [];
+      this.wantedBy = wantedBy;
+      this.isComplete = this.dot === rule.symbols.length;
+    }
+
+    State.prototype.toString = function () {
+      return "{" + this.rule.toString(this.dot) + "}, from: " + (this.reference || 0);
+    };
+
+    State.prototype.nextState = function (child) {
+      var state = new State(this.rule, this.dot + 1, this.reference, this.wantedBy);
+      state.left = this;
+      state.right = child;
+
+      if (state.isComplete) {
+        state.data = state.build();
+      }
+
+      return state;
+    };
+
+    State.prototype.build = function () {
+      var children = [];
+      var node = this;
+
+      do {
+        children.push(node.right.data);
+        node = node.left;
+      } while (node.left);
+
+      children.reverse();
+      return children;
+    };
+
+    State.prototype.finish = function () {
+      if (this.rule.postprocess) {
+        this.data = this.rule.postprocess(this.data, this.reference, Parser.fail);
+      }
+    };
+
+    function Column(grammar, index) {
+      this.grammar = grammar;
+      this.index = index;
+      this.states = [];
+      this.wants = {}; // states indexed by the non-terminal they expect
+
+      this.scannable = []; // list of states that expect a token
+
+      this.completed = {}; // states that are nullable
+    }
+
+    Column.prototype.process = function (nextColumn) {
+      var states = this.states;
+      var wants = this.wants;
+      var completed = this.completed;
+
+      for (var w = 0; w < states.length; w++) {
+        // nb. we push() during iteration
+        var state = states[w];
+
+        if (state.isComplete) {
+          state.finish();
+
+          if (state.data !== Parser.fail) {
+            // complete
+            var wantedBy = state.wantedBy;
+
+            for (var i = wantedBy.length; i--;) {
+              // this line is hot
+              var left = wantedBy[i];
+              this.complete(left, state);
+            } // special-case nullables
+
+
+            if (state.reference === this.index) {
+              // make sure future predictors of this rule get completed.
+              var exp = state.rule.name;
+              (this.completed[exp] = this.completed[exp] || []).push(state);
+            }
+          }
+        } else {
+          // queue scannable states
+          var exp = state.rule.symbols[state.dot];
+
+          if (typeof exp !== 'string') {
+            this.scannable.push(state);
+            continue;
+          } // predict
+
+
+          if (wants[exp]) {
+            wants[exp].push(state);
+
+            if (completed.hasOwnProperty(exp)) {
+              var nulls = completed[exp];
+
+              for (var i = 0; i < nulls.length; i++) {
+                var right = nulls[i];
+                this.complete(state, right);
+              }
+            }
+          } else {
+            wants[exp] = [state];
+            this.predict(exp);
+          }
+        }
+      }
+    };
+
+    Column.prototype.predict = function (exp) {
+      var rules = this.grammar.byName[exp] || [];
+
+      for (var i = 0; i < rules.length; i++) {
+        var r = rules[i];
+        var wantedBy = this.wants[exp];
+        var s = new State(r, 0, this.index, wantedBy);
+        this.states.push(s);
+      }
+    };
+
+    Column.prototype.complete = function (left, right) {
+      var copy = left.nextState(right);
+      this.states.push(copy);
+    };
+
+    function Grammar(rules, start) {
+      this.rules = rules;
+      this.start = start || this.rules[0].name;
+      var byName = this.byName = {};
+      this.rules.forEach(function (rule) {
+        if (!byName.hasOwnProperty(rule.name)) {
+          byName[rule.name] = [];
+        }
+
+        byName[rule.name].push(rule);
+      });
+    } // So we can allow passing (rules, start) directly to Parser for backwards compatibility
+
+
+    Grammar.fromCompiled = function (rules, start) {
+      var lexer = rules.Lexer;
+
+      if (rules.ParserStart) {
+        start = rules.ParserStart;
+        rules = rules.ParserRules;
+      }
+
+      var rules = rules.map(function (r) {
+        return new Rule(r.name, r.symbols, r.postprocess);
+      });
+      var g = new Grammar(rules, start);
+      g.lexer = lexer; // nb. storing lexer on Grammar is iffy, but unavoidable
+
+      return g;
+    };
+
+    function StreamLexer() {
+      this.reset("");
+    }
+
+    StreamLexer.prototype.reset = function (data, state) {
+      this.buffer = data;
+      this.index = 0;
+      this.line = state ? state.line : 1;
+      this.lastLineBreak = state ? -state.col : 0;
+    };
+
+    StreamLexer.prototype.next = function () {
+      if (this.index < this.buffer.length) {
+        var ch = this.buffer[this.index++];
+
+        if (ch === '\n') {
+          this.line += 1;
+          this.lastLineBreak = this.index;
+        }
+
+        return {
+          value: ch
+        };
+      }
+    };
+
+    StreamLexer.prototype.save = function () {
+      return {
+        line: this.line,
+        col: this.index - this.lastLineBreak
+      };
+    };
+
+    StreamLexer.prototype.formatError = function (token, message) {
+      // nb. this gets called after consuming the offending token,
+      // so the culprit is index-1
+      var buffer = this.buffer;
+
+      if (typeof buffer === 'string') {
+        var nextLineBreak = buffer.indexOf('\n', this.index);
+        if (nextLineBreak === -1) nextLineBreak = buffer.length;
+        var line = buffer.substring(this.lastLineBreak, nextLineBreak);
+        var col = this.index - this.lastLineBreak;
+        message += " at line " + this.line + " col " + col + ":\n\n";
+        message += "  " + line + "\n";
+        message += "  " + Array(col).join(" ") + "^";
+        return message;
+      } else {
+        return message + " at index " + (this.index - 1);
+      }
+    };
+
+    function Parser(rules, start, options) {
+      if (rules instanceof Grammar) {
+        var grammar = rules;
+        var options = start;
+      } else {
+        var grammar = Grammar.fromCompiled(rules, start);
+      }
+
+      this.grammar = grammar; // Read options
+
+      this.options = {
+        keepHistory: false,
+        lexer: grammar.lexer || new StreamLexer()
+      };
+
+      for (var key in options || {}) {
+        this.options[key] = options[key];
+      } // Setup lexer
+
+
+      this.lexer = this.options.lexer;
+      this.lexerState = undefined; // Setup a table
+
+      var column = new Column(grammar, 0);
+      var table = this.table = [column]; // I could be expecting anything.
+
+      column.wants[grammar.start] = [];
+      column.predict(grammar.start); // TODO what if start rule is nullable?
+
+      column.process();
+      this.current = 0; // token index
+    } // create a reserved token for indicating a parse fail
+
+
+    Parser.fail = {};
+
+    Parser.prototype.feed = function (chunk) {
+      var lexer = this.lexer;
+      lexer.reset(chunk, this.lexerState);
+      var token;
+
+      while (token = lexer.next()) {
+        // We add new states to table[current+1]
+        var column = this.table[this.current]; // GC unused states
+
+        if (!this.options.keepHistory) {
+          delete this.table[this.current - 1];
+        }
+
+        var n = this.current + 1;
+        var nextColumn = new Column(this.grammar, n);
+        this.table.push(nextColumn); // Advance all tokens that expect the symbol
+
+        var literal = token.text !== undefined ? token.text : token.value;
+        var value = lexer.constructor === StreamLexer ? token.value : token;
+        var scannable = column.scannable;
+
+        for (var w = scannable.length; w--;) {
+          var state = scannable[w];
+          var expect = state.rule.symbols[state.dot]; // Try to consume the token
+          // either regex or literal
+
+          if (expect.test ? expect.test(value) : expect.type ? expect.type === token.type : expect.literal === literal) {
+            // Add it
+            var next = state.nextState({
+              data: value,
+              token: token,
+              isToken: true,
+              reference: n - 1
+            });
+            nextColumn.states.push(next);
+          }
+        } // Next, for each of the rules, we either
+        // (a) complete it, and try to see if the reference row expected that
+        //     rule
+        // (b) predict the next nonterminal it expects by adding that
+        //     nonterminal's start state
+        // To prevent duplication, we also keep track of rules we have already
+        // added
+
+
+        nextColumn.process(); // If needed, throw an error:
+
+        if (nextColumn.states.length === 0) {
+          // No states at all! This is not good.
+          var message = this.lexer.formatError(token, "invalid syntax") + "\n";
+          message += "Unexpected " + (token.type ? token.type + " token: " : "");
+          message += JSON.stringify(token.value !== undefined ? token.value : token) + "\n";
+          var err = new Error(message);
+          err.offset = this.current;
+          err.token = token;
+          throw err;
+        } // maybe save lexer state
+
+
+        if (this.options.keepHistory) {
+          column.lexerState = lexer.save();
+        }
+
+        this.current++;
+      }
+
+      if (column) {
+        this.lexerState = lexer.save();
+      } // Incrementally keep track of results
+
+
+      this.results = this.finish(); // Allow chaining, for whatever it's worth
+
+      return this;
+    };
+
+    Parser.prototype.save = function () {
+      var column = this.table[this.current];
+      column.lexerState = this.lexerState;
+      return column;
+    };
+
+    Parser.prototype.restore = function (column) {
+      var index = column.index;
+      this.current = index;
+      this.table[index] = column;
+      this.table.splice(index + 1);
+      this.lexerState = column.lexerState; // Incrementally keep track of results
+
+      this.results = this.finish();
+    }; // nb. deprecated: use save/restore instead!
+
+
+    Parser.prototype.rewind = function (index) {
+      if (!this.options.keepHistory) {
+        throw new Error('set option `keepHistory` to enable rewinding');
+      } // nb. recall column (table) indicies fall between token indicies.
+      //        col 0   --   token 0   --   col 1
+
+
+      this.restore(this.table[index]);
+    };
+
+    Parser.prototype.finish = function () {
+      // Return the possible parsings
+      var considerations = [];
+      var start = this.grammar.start;
+      var column = this.table[this.table.length - 1];
+      column.states.forEach(function (t) {
+        if (t.rule.name === start && t.dot === t.rule.symbols.length && t.reference === 0 && t.data !== Parser.fail) {
+          considerations.push(t);
+        }
+      });
+      return considerations.map(function (c) {
+        return c.data;
+      });
+    };
+
+    return {
+      Parser: Parser,
+      Grammar: Grammar,
+      Rule: Rule
+    };
+  });
+});
+
+var grammar = createCommonjsModule(function (module) {
+  // Generated automatically by nearley, version 2.16.0
+  // http://github.com/Hardmath123/nearley
+  (function () {
+    function id(x) {
+      return x[0];
+    }
+
+    var grammar = {
+      Lexer: undefined,
+      ParserRules: [{
+        "name": "main",
+        "symbols": ["_", "AS", "_"],
+        "postprocess": function postprocess(ts) {
+          return ts[1];
+        }
+      }, {
+        "name": "P",
+        "symbols": [{
+          "literal": "("
+        }, "_", "AS", "_", {
+          "literal": ")"
+        }],
+        "postprocess": function postprocess(ts) {
+          return ts.filter(function (x) {
+            return !!x;
+          });
+        }
+      }, {
+        "name": "P",
+        "symbols": ["SUBSET"],
+        "postprocess": id
+      }, {
+        "name": "M",
+        "symbols": ["M", "_", {
+          "literal": "∩"
+        }, "_", "P"],
+        "postprocess": function postprocess(ts) {
+          return ts.filter(function (x) {
+            return !!x;
+          });
+        }
+      }, {
+        "name": "M",
+        "symbols": ["P"],
+        "postprocess": id
+      }, {
+        "name": "AS",
+        "symbols": ["AS", "_", {
+          "literal": "+"
+        }, "_", "M"],
+        "postprocess": function postprocess(ts) {
+          return ts.filter(function (x) {
+            return !!x;
+          });
+        }
+      }, {
+        "name": "AS",
+        "symbols": ["AS", "_", {
+          "literal": "∪"
+        }, "_", "M"],
+        "postprocess": function postprocess(ts) {
+          return ts.filter(function (x) {
+            return !!x;
+          });
+        }
+      }, {
+        "name": "AS",
+        "symbols": ["AS", "_", {
+          "literal": "-"
+        }, "_", "M"],
+        "postprocess": function postprocess(ts) {
+          return ts.filter(function (x) {
+            return !!x;
+          });
+        }
+      }, {
+        "name": "AS",
+        "symbols": ["M"],
+        "postprocess": id
+      }, {
+        "name": "SUBSET",
+        "symbols": ["RD"],
+        "postprocess": id
+      }, {
+        "name": "SUBSET",
+        "symbols": ["FI"],
+        "postprocess": id
+      }, {
+        "name": "SUBSET",
+        "symbols": ["RDFI"],
+        "postprocess": id
+      }, {
+        "name": "SUBSET",
+        "symbols": ["CHAPITRE"],
+        "postprocess": id
+      }, {
+        "name": "SUBSET",
+        "symbols": ["NATURE"],
+        "postprocess": id
+      }, {
+        "name": "SUBSET",
+        "symbols": ["FONCTION"],
+        "postprocess": id
+      }, {
+        "name": "SUBSET",
+        "symbols": ["ANNEE"],
+        "postprocess": id
+      }, {
+        "name": "RD",
+        "symbols": [{
+          "literal": "R"
+        }],
+        "postprocess": id
+      }, {
+        "name": "RD",
+        "symbols": [{
+          "literal": "D"
+        }],
+        "postprocess": id
+      }, {
+        "name": "FI",
+        "symbols": [{
+          "literal": "F"
+        }],
+        "postprocess": id
+      }, {
+        "name": "FI",
+        "symbols": [{
+          "literal": "I"
+        }],
+        "postprocess": id
+      }, {
+        "name": "RDFI",
+        "symbols": ["RD", "FI"],
+        "postprocess": function postprocess(ts) {
+          return ts.join('');
+        }
+      }, {
+        "name": "CHAPITRE$ebnf$1",
+        "symbols": [/[0-9]/]
+      }, {
+        "name": "CHAPITRE$ebnf$1",
+        "symbols": ["CHAPITRE$ebnf$1", /[0-9]/],
+        "postprocess": function arrpush(d) {
+          return d[0].concat([d[1]]);
+        }
+      }, {
+        "name": "CHAPITRE",
+        "symbols": [{
+          "literal": "C"
+        }, "CHAPITRE$ebnf$1"],
+        "postprocess": function postprocess(ts) {
+          return ts[0] + ts[1].join('');
+        }
+      }, {
+        "name": "NATURE$ebnf$1",
+        "symbols": [/[0-9]/]
+      }, {
+        "name": "NATURE$ebnf$1",
+        "symbols": ["NATURE$ebnf$1", /[0-9]/],
+        "postprocess": function arrpush(d) {
+          return d[0].concat([d[1]]);
+        }
+      }, {
+        "name": "NATURE",
+        "symbols": [{
+          "literal": "N"
+        }, "NATURE$ebnf$1"],
+        "postprocess": function postprocess(ts) {
+          return ts[0] + ts[1].join('');
+        }
+      }, {
+        "name": "FONCTION$ebnf$1",
+        "symbols": [/[0-9]/]
+      }, {
+        "name": "FONCTION$ebnf$1",
+        "symbols": ["FONCTION$ebnf$1", /[0-9]/],
+        "postprocess": function arrpush(d) {
+          return d[0].concat([d[1]]);
+        }
+      }, {
+        "name": "FONCTION",
+        "symbols": [{
+          "literal": "F"
+        }, "FONCTION$ebnf$1"],
+        "postprocess": function postprocess(ts) {
+          return ts[0] + ts[1].join('');
+        }
+      }, {
+        "name": "ANNEE$string$1",
+        "symbols": [{
+          "literal": "A"
+        }, {
+          "literal": "n"
+        }, {
+          "literal": "n"
+        }],
+        "postprocess": function joiner(d) {
+          return d.join('');
+        }
+      }, {
+        "name": "ANNEE$ebnf$1",
+        "symbols": [/[0-9]/]
+      }, {
+        "name": "ANNEE$ebnf$1",
+        "symbols": ["ANNEE$ebnf$1", /[0-9]/],
+        "postprocess": function arrpush(d) {
+          return d[0].concat([d[1]]);
+        }
+      }, {
+        "name": "ANNEE",
+        "symbols": ["ANNEE$string$1", "ANNEE$ebnf$1"],
+        "postprocess": function postprocess(ts) {
+          return ts[0] + ts[1].join('');
+        }
+      }, {
+        "name": "_$ebnf$1",
+        "symbols": []
+      }, {
+        "name": "_$ebnf$1",
+        "symbols": ["_$ebnf$1", /[\s]/],
+        "postprocess": function arrpush(d) {
+          return d[0].concat([d[1]]);
+        }
+      }, {
+        "name": "_",
+        "symbols": ["_$ebnf$1"],
+        "postprocess": function postprocess() {
+          return null;
+        }
+      }],
+      ParserStart: "main"
+    };
+
+    {
+      module.exports = grammar;
+    }
+  })();
+});
+
+function matchesSimple(r, year, subset) {
+  switch (subset) {
+    case 'R':
+    case 'D':
+      return r['CodRD'] === subset;
+
+    case 'F':
+    case 'I':
+      return r['FI'] === subset;
+
+    case 'RF':
+    case 'RI':
+    case 'DF':
+    case 'DI':
+      return r['CodRD'] === subset[0] && r['FI'] === subset[1];
+  }
+
+  if (subset.startsWith('N')) return subset.slice(1) === r['Nature'];
+  if (subset.startsWith('F')) return r['Fonction'].startsWith(subset.slice(1));
+  if (subset.startsWith('C')) return subset.slice(1) === r['Chapitre'];
+  if (subset.startsWith('Ann')) return subset.slice('Ann'.length) === String(year);
+  console.warn('matchesSubset - Unhandled case', subset);
+}
+
+function matchesComplex(r, year, combo) {
+  if (typeof combo === 'string') return matchesSimple(r, year, combo); // assert(Array.isArray(combo))
+
+  var _combo = _slicedToArray(combo, 3),
+      left = _combo[0],
+      middle = _combo[1],
+      right = _combo[2];
+
+  if (left === '(' && right === ')') return matchesComplex(r, year, middle);else {
+    var operator = middle;
+
+    switch (operator) {
+      case '+':
+      case '∪':
+        return matchesComplex(r, year, left) || matchesComplex(r, year, right);
+
+      case '∩':
+        return matchesComplex(r, year, left) && matchesComplex(r, year, right);
+
+      case '-':
+        return matchesComplex(r, year, left) && !matchesComplex(r, year, right);
+
+      default:
+        console.warn('matchesSubset - Unhandled case', operator, combo);
+    }
+  }
+  console.warn('matchesSubset - Unhandled case', combo);
+}
+
+var returnFalseFunction = Object.freeze(function () {
+  return false;
+});
+/*
+    returns a function that can be used in the context of a documentBudgetaire.rows.filter()
+*/
+
+var makeLigneBudgetFilterFromFormula = src(function makeLigneBudgetFilterFromFormula(formula, year) {
+  var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+
+  try {
+    parser.feed(formula);
+    if (parser.results[0] === undefined) return returnFalseFunction;else return src(function (budgetRow) {
+      return matchesComplex(budgetRow, year, parser.results[0]);
+    });
+  } catch (e) {
+    return returnFalseFunction;
+  }
+});
 
 function makeTable(rows, year) {
   return Bouture.section([Bouture.h1('CA Gironde ', year), Bouture.h2(rows.size, ' elements | ', sum(rows.map(function (r) {
@@ -6208,7 +6873,6 @@ function makeTable(rows, year) {
   })).toFixed(2) + '€'), Bouture.table([Bouture.thead.tr(['RD', 'FI', 'Fonction', 'Nature', 'Montant'].map(function (t) {
     return Bouture.th(t);
   })), Bouture.tbody(rows.map(function (r) {
-    console.log('r', r.toJS());
     return Bouture.tr([Bouture.td(r['CodRD']), Bouture.td(r['FI']), Bouture.td(r['Fonction']), Bouture.td(r['Nature']), Bouture.td(r['MtReal'].toFixed(2) + '€')]);
   }).toArray())])]);
 }
@@ -6228,10 +6892,8 @@ var docBudgP = Promise.all([xml('./data/CA/CA2017BPAL.xml'), xml('./data/plansDe
 document.addEventListener('DOMContentLoaded', function (e) {
   var input = document.body.querySelector('input');
   docBudgP.then(function (docBudg) {
-    function makeOutputFromFormula(formula) {
-      var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-      parser.feed(formula);
-      var filter = makeFilterFromParserOutput(parser.results);
+    function makeOutputFromFormula(formula, year) {
+      var filter = makeLigneBudgetFilterFromFormula(formula, year);
       return Bouture.output([makeTable(docBudg['rows'].filter(filter), docBudg['Exer'])]).getElement();
     }
 
@@ -6239,7 +6901,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
     var changeHashTimeout;
     input.addEventListener('input', function (e) {
       var formula = e.target.value.trim();
-      document.body.querySelector('output').replaceWith(memzMakeOutputFromFormula(formula)); // save in hash if formula stayed unchanged for 3secs
+      document.body.querySelector('output').replaceWith(memzMakeOutputFromFormula(formula, docBudg.Exer)); // save in hash if formula stayed unchanged for 3secs
 
       clearTimeout(changeHashTimeout);
       changeHashTimeout = setTimeout(function () {
@@ -6294,6 +6956,9 @@ document.addEventListener('DOMContentLoaded', function (e) {
   }, {
     formula: 'RI∩C16',
     description: "toutes les recettes d'investissement du chapitre 16 (emprunts)"
+  }, {
+    formula: 'RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)',
+    description: "Gironde - recettes de fonctionnement - Conf\xE9rence des financeurs"
   }];
   var ul = Bouture.ul(examples.map(function (_ref3) {
     var formula = _ref3.formula,
