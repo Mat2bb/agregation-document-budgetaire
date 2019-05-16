@@ -57,6 +57,9 @@ export default new Store({
 
                 state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode)
                 fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
+
+                // select newly created node
+                state.millerColumnSelection = aggregationDescriptionNodeToKeyPath.get(newNode).filter(key => key !== 'children')
             },
             editChild(state, parent, currentChild, newChildData){
                 const {name, type, id} = newChildData;
