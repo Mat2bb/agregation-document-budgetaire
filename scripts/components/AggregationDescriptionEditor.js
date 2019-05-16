@@ -125,8 +125,8 @@ class MillerColumn extends Component {
                                 })
                             }}>
                                 <label>
-                                    Identifiant
-                                    <input autocomplete="off" name="id" defaultValue=${editingNode && editingNode.id}/>
+                                    Codification unique
+                                    <input autocomplete="off" name="id" placeholder="DF.1.7.2" defaultValue=${editingNode && editingNode.id}/>
                                 </label>
                                 <label>
                                     Nom
