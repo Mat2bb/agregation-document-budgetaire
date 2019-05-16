@@ -58,6 +58,44 @@ export default new Store({
                 state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode)
                 fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
             },
+            editChild(state, parent, currentChild, newChildData){
+                const {name, type, id} = newChildData;
+                const {formula, children} = currentChild;
+
+                const parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent)
+                const childKeyPath = parentKeyPath.push('children', id)
+
+                const newNode = type === 'subgroup' ?
+                    new AggregationDescription({id, name, children: children || new OrderedMap()}) :
+                    new AggregationDescriptionLeaf({id, name, formula: formula || ''})
+
+                if(currentChild.id === newChildData.id){
+                    state.aggregationDescription = state.aggregationDescription.setIn(childKeyPath, newNode)
+                }
+                else{
+                    state.aggregationDescription = state.aggregationDescription
+                        .deleteIn( parentKeyPath.push('children', currentChild.id) )
+                        .setIn(childKeyPath, newNode)
+
+                    state.millerColumnSelection = state.millerColumnSelection
+                        .set(
+                            state.millerColumnSelection.findIndex(id => id === currentChild.id),
+                            id
+                        )
+                }
+
+                fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
+            },
+            removeChild(state, parent, child){
+                const parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent)
+                const toDeletePath = parentKeyPath.push('children', child.id)
+
+                state.millerColumnSelection = state.millerColumnSelection
+                        .slice( 0, state.millerColumnSelection.findIndex(id => id === child.id) )
+
+                state.aggregationDescription = state.aggregationDescription.deleteIn(toDeletePath)
+                fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
+            },
             selectNode(state, nodeId, index){
                 if(state.millerColumnSelection.get(index) === nodeId){
                     state.millerColumnSelection = state.millerColumnSelection.slice(0, index)

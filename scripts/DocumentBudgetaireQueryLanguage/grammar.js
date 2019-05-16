@@ -20,6 +20,7 @@ var grammar = {
     {"name": "SUBSET", "symbols": ["CHAPITRE"], "postprocess": id},
     {"name": "SUBSET", "symbols": ["NATURE"], "postprocess": id},
     {"name": "SUBSET", "symbols": ["FONCTION"], "postprocess": id},
+    {"name": "SUBSET", "symbols": ["ANNEE"], "postprocess": id},
     {"name": "RD", "symbols": [{"literal":"R"}], "postprocess": id},
     {"name": "RD", "symbols": [{"literal":"D"}], "postprocess": id},
     {"name": "FI", "symbols": [{"literal":"F"}], "postprocess": id},
@@ -34,6 +35,10 @@ var grammar = {
     {"name": "FONCTION$ebnf$1", "symbols": [/[0-9]/]},
     {"name": "FONCTION$ebnf$1", "symbols": ["FONCTION$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "FONCTION", "symbols": [{"literal":"F"}, "FONCTION$ebnf$1"], "postprocess": ts => ts[0]+ts[1].join('')},
+    {"name": "ANNEE$string$1", "symbols": [{"literal":"A"}, {"literal":"n"}, {"literal":"n"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "ANNEE$ebnf$1", "symbols": [/[0-9]/]},
+    {"name": "ANNEE$ebnf$1", "symbols": ["ANNEE$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "ANNEE", "symbols": ["ANNEE$string$1", "ANNEE$ebnf$1"], "postprocess": ts => ts[0]+ts[1].join('')},
     {"name": "_$ebnf$1", "symbols": []},
     {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": () => null}

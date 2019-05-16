@@ -15,7 +15,7 @@ export default function makeAggregateFunction(aggregationDescription){
             // leaf, has .formula
             AggregatedDocumentBudgetaireLeaf({
                 id, name, 
-                elements: documentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula))
+                elements: documentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula, documentBudgetaire.Exer))
             })
     }
 
