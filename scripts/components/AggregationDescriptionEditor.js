@@ -1,68 +1,8 @@
 import { List } from 'immutable';
 import {h, Component} from 'preact'
 
-import {aggregatedDocumentBudgetaireNodeElements, aggregatedDocumentBudgetaireNodeTotal, AggregationDescriptionFromJSON} from '../finance/AggregationDataStructures.js'
-
-
-function AggregationDescriptionLeafEditor({
-    aggregationDescriptionLeaf, aggregatedDocumentBudgetaireCorrespondingNode, onIdChange, onNameChange, onFormulaChange
-}){
-    const {id, name, formula} = aggregationDescriptionLeaf
-
-    /*
-        <input type="text" value=${id} onInput=${onIdChange} />
-        <input type="text" value=${name} onInput=${onNameChange} />
-    */
-
-    return html`
-        <div class="formula-editor">
-            <h1>${name} <small>(${id})</small></h1>
-            <div>
-                <strong>Formule</strong> <a class="help" target="_blank" href="./exemples_formules.html">?</a>
-                <input type="text" value=${formula} onInput=${e => onFormulaChange(e.target.value)} />
-                <table class="summary">
-                    <tr>
-                        <td>Nombre d'éléments</td>
-                        <td>
-                            <strong>
-                                ${aggregatedDocumentBudgetaireNodeElements(aggregatedDocumentBudgetaireCorrespondingNode).size}
-                            </strong>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Total</td>
-                        <td class="money-amount">
-                            <strong>
-                            ${aggregatedDocumentBudgetaireNodeTotal(aggregatedDocumentBudgetaireCorrespondingNode).toFixed(2)+'€'}
-                            </strong>
-                        </td>
-                    </tr>
-                </table>
-                <table class="formula-rows">
-                    <thead>
-                        <tr>
-                            ${['RDFI', 'Fonction', 'Nature', 'Montant'].map(s => html`<th>${s}</th>`)}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${
-                            aggregatedDocumentBudgetaireCorrespondingNode.elements.toArray().map(r => {
-                                return html`
-                                    <tr>
-                                        <td>${r['CodRD']+r['FI']}</td>
-                                        <td>${r['Fonction']}</td>
-                                        <td>${r['Nature']}</td>
-                                        <td class="money-amount">${r['MtReal'].toFixed(2)+'€'}</td>
-                                    </tr>`
-                            })
-                        }      
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `    
-}
-
+import {AggregationDescriptionFromJSON} from '../finance/AggregationDataStructures.js'
+import AggregationDescriptionLeafEditor from './AggregationDescriptionLeafEditor.js'
 
 class MillerColumn extends Component {
     constructor(props) {
@@ -86,7 +26,7 @@ class MillerColumn extends Component {
                                 <li 
                                     class=${[
                                         isSelected ? 'selected' : undefined,
-                                        node.children ? 'subgroup' : 'formula'
+                                        node.children ? 'group' : 'formula'
                                     ].filter(x=>x).join(' ')} 
                                     onClick=${() => onNodeSelection(node.id)}
                                 >
@@ -125,8 +65,8 @@ class MillerColumn extends Component {
                                 })
                             }}>
                                 <label>
-                                    Identifiant
-                                    <input autocomplete="off" name="id" defaultValue=${editingNode && editingNode.id}/>
+                                    Codification unique
+                                    <input autocomplete="off" name="id" placeholder="DF.1.7.2" defaultValue=${editingNode && editingNode.id}/>
                                 </label>
                                 <label>
                                     Nom
@@ -135,8 +75,8 @@ class MillerColumn extends Component {
                                 <section>
                                     Type
                                     <label>
-                                        <input defaultChecked=${editingNode ? editingNode.children : true} type="radio" name="type" value="subgroup"/>
-                                        Sous-groupe
+                                        <input defaultChecked=${editingNode ? editingNode.children : true} type="radio" name="type" value="group"/>
+                                        Groupe
                                     </label>
                                     <label>
                                         <input defaultChecked=${editingNode && ('formula' in editingNode)}  type="radio" name="type" value="formula"/>
@@ -165,7 +105,7 @@ class MillerColumn extends Component {
 }
 
 // https://en.wikipedia.org/wiki/Miller_columns
-function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild, selectNode: onNodeSelection, changeFormula: onFormulaChange}}){
+function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild, selectNode, changeFormula}}){
 
     const firstSelectedId = selectedList.first();
 
@@ -179,7 +119,7 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
                 addChild=${childData => { addChild(aggregationDescription, childData) } }
                 editChild=${(node, childData) => editChild(aggregationDescription, node, childData)}
                 removeChild=${child => { removeChild(aggregationDescription, child) }}
-                onNodeSelection=${id => onNodeSelection(id, 0)},
+                onNodeSelection=${id => selectNode(id, 0)},
             />
             ${
                 selectedList.map((id, i) => {
@@ -195,12 +135,12 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
                             addChild=${childData => { addChild(node, childData) } }
                             editChild=${(currentChild, childData) => editChild(node, currentChild, childData)}
                             removeChild=${child => { removeChild(node, child) }}
-                            onNodeSelection=${id => onNodeSelection(id, i+1)},
+                            onNodeSelection=${id => selectNode(id, i+1)},
                         />` :
                         html`<${AggregationDescriptionLeafEditor} 
                             aggregationDescriptionLeaf=${node}
                             aggregatedDocumentBudgetaireCorrespondingNode=${aggregatedDocumentBudgetaire.getIn(keyPath)}
-                            onFormulaChange=${formula => onFormulaChange(node, formula)}
+                            onFormulaChange=${formula => changeFormula(node, formula)}
                         />`
                 }).toArray()
             }
