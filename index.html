@@ -168,33 +168,27 @@
             }
 
 
-            .formula-editor{
+            .formula-editor-with-preview{
                 padding: 0 0.5em;
                 
             }
 
-            .formula-editor h1{
+            .formula-editor-with-preview h1{
                 text-align: center;
             }
-            .formula-editor h1 small{
+            .formula-editor-with-preview h1 small{
                 color: #999;
             }
 
-            .formula-editor input{
-                width: 100%;
-                font-family: monospace;
-                font-size: 1.5em;
-            }
-
-            .formula-editor .summary{
+            .formula-editor-with-preview .summary{
                 width: 100%;
             }
-            .formula-editor .summary tr td:nth-child(2){
+            .formula-editor-with-preview .summary tr td:nth-child(2){
                 text-align: right;
                 font-weight: bold;
             }
 
-            .formula-editor a.help{
+            .formula-editor-with-preview a.help{
                 border: 1px solid #555;
                 border-radius: 50%;
 
@@ -207,6 +201,45 @@
 
                 margin-bottom: 0.3em;
             }
+
+
+            .formula-editor .buttons{
+                display: flex;
+                flex-direction: row;
+                margin-bottom: 0.2em;
+            }
+
+            .formula-editor .buttons > button{
+                flex: 1;
+                font-family: monospace;
+
+                padding: 0.4em 0;
+
+                background-color: white;
+                border-color: #DDD;
+                border-style: solid;
+                border-width: 1px;
+
+                border-right-width: 0;
+            }
+
+            .formula-editor .buttons > button:last-child{
+                border-right-width: 1px;
+            }
+
+
+            .formula-editor .buttons > button:hover{
+                background-color: #DDD;
+            }
+
+            .formula-editor input{
+                width: 100%;
+                font-family: monospace;
+                font-size: 1.2em;
+            }
+
+
+
 
             .aggregation-description-import-export{
                 display: flex;

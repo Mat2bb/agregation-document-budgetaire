@@ -2,7 +2,7 @@ import { List } from 'immutable';
 import {h, Component} from 'preact'
 
 import {AggregationDescriptionFromJSON} from '../finance/AggregationDataStructures.js'
-
+import AggregationDescriptionLeafEditor from './AggregationDescriptionLeafEditor.js'
 
 class MillerColumn extends Component {
     constructor(props) {
@@ -105,7 +105,7 @@ class MillerColumn extends Component {
 }
 
 // https://en.wikipedia.org/wiki/Miller_columns
-function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild, selectNode: onNodeSelection, changeFormula: onFormulaChange}}){
+function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild, selectNode, changeFormula}}){
 
     const firstSelectedId = selectedList.first();
 
@@ -119,7 +119,7 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
                 addChild=${childData => { addChild(aggregationDescription, childData) } }
                 editChild=${(node, childData) => editChild(aggregationDescription, node, childData)}
                 removeChild=${child => { removeChild(aggregationDescription, child) }}
-                onNodeSelection=${id => onNodeSelection(id, 0)},
+                onNodeSelection=${id => selectNode(id, 0)},
             />
             ${
                 selectedList.map((id, i) => {
@@ -135,12 +135,12 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
                             addChild=${childData => { addChild(node, childData) } }
                             editChild=${(currentChild, childData) => editChild(node, currentChild, childData)}
                             removeChild=${child => { removeChild(node, child) }}
-                            onNodeSelection=${id => onNodeSelection(id, i+1)},
+                            onNodeSelection=${id => selectNode(id, i+1)},
                         />` :
                         html`<${AggregationDescriptionLeafEditor} 
                             aggregationDescriptionLeaf=${node}
                             aggregatedDocumentBudgetaireCorrespondingNode=${aggregatedDocumentBudgetaire.getIn(keyPath)}
-                            onFormulaChange=${formula => onFormulaChange(node, formula)}
+                            onFormulaChange=${formula => changeFormula(node, formula)}
                         />`
                 }).toArray()
             }

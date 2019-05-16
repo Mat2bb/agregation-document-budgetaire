@@ -1,6 +1,64 @@
-import {h} from 'preact'
+import {h, Component} from 'preact'
 
 import {aggregatedDocumentBudgetaireNodeElements, aggregatedDocumentBudgetaireNodeTotal} from '../finance/AggregationDataStructures.js'
+
+
+class FormulaEditor extends Component {  
+    constructor(props) {
+        super(props);
+        this.state = {value: props.formula};
+
+        const {onFormulaChange} = props;
+
+        this.inputElement = undefined;
+
+        this.setTextInputRef = element => {
+            this.inputElement = element;
+        };
+
+        this.focusTextInput = () => {
+            // Focus the text input using the raw DOM API
+            if (this.inputElement) this.inputElement.focus();
+        };
+
+        this.handleChange = e => {
+            const value = e.target.value
+
+            this.setState({value})
+            onFormulaChange(value)
+        }
+
+        this.buttonClick = e => {
+            const value = this.state.value + e.target.textContent;
+
+            this.setState({value})
+            onFormulaChange(value)
+
+            this.focusTextInput()
+        }
+    }
+
+    componentDidMount() {
+        // autofocus the input on mount
+        this.focusTextInput();
+    }
+
+    render(props, {value}) {
+        // RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)
+
+        return html`
+            <section class="formula-editor">
+                <div class="buttons">
+                    ${
+                        ['DF', 'RF', 'DI', 'RI', '∩', '∪']
+                            .map(text => html`<button onClick=${this.buttonClick}>${text}</button>`)
+                    }
+                </div>
+                <input type="text" value=${value} ref=${this.setTextInputRef} onInput=${this.handleChange} />  
+            </section>
+        `
+    }
+}
 
 
 export default function AggregationDescriptionLeafEditor({
@@ -9,11 +67,11 @@ export default function AggregationDescriptionLeafEditor({
     const {id, name, formula} = aggregationDescriptionLeaf
 
     return html`
-        <div class="formula-editor">
+        <div class="formula-editor-with-preview">
             <h1>${name} <small>(${id})</small></h1>
             <div>
                 <strong>Formule</strong> <a class="help" target="_blank" href="./exemples_formules.html">?</a>
-                <input type="text" value=${formula} onInput=${e => onFormulaChange(e.target.value)} />
+                <${FormulaEditor} key=${id} formula=${formula} onFormulaChange=${onFormulaChange}/>
                 <table class="summary">
                     <tr>
                         <td>Nombre d'éléments</td>
