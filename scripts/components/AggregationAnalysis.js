@@ -64,7 +64,7 @@ export default function({aggregationDescription, documentBudgetaires}){
                                 <td>F${row["Fonction"]}</td>
                                 <td>C${row["Chapitre"]}</td>
                                 <td>N${row["Nature"]}</td>
-                                <td>${row["MtReal"]}</td>
+                                <td class="money-amount">${row["MtReal"].toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}</td>
                             </tr>
                         `
                     })

@@ -46,7 +46,7 @@ export default new Store({
                 state.aggregationDescription = aggregationDescription
             },
             addChild(state, parent, {id, name, type}){
-                const newNode = type === 'subgroup' ? 
+                const newNode = type === 'group' ? 
                     new AggregationDescription({id, name, children: new OrderedMap()}) :
                     new AggregationDescriptionLeaf({id, name, formula: ''})
 
@@ -57,6 +57,9 @@ export default new Store({
 
                 state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode)
                 fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
+
+                // select newly created node
+                state.millerColumnSelection = aggregationDescriptionNodeToKeyPath.get(newNode).filter(key => key !== 'children')
             },
             editChild(state, parent, currentChild, newChildData){
                 const {name, type, id} = newChildData;
@@ -65,7 +68,7 @@ export default new Store({
                 const parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent)
                 const childKeyPath = parentKeyPath.push('children', id)
 
-                const newNode = type === 'subgroup' ?
+                const newNode = type === 'group' ?
                     new AggregationDescription({id, name, children: children || new OrderedMap()}) :
                     new AggregationDescriptionLeaf({id, name, formula: formula || ''})
 

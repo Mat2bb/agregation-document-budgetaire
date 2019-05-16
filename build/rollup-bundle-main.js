@@ -7917,7 +7917,12 @@ function AggregationAnalysis (_ref3) {
   var unusedRows = documentBudgetaire ? makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) : [];
   var rowsUsedMoreThanOnce = documentBudgetaire ? makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) : [];
   return h("section", null, h("h1", null, "Analyse"), h("p", null, "Il y a ", documentBudgetaire && documentBudgetaire.rows.size, " lignes dans le document budgetaire"), h("h2", null, "Lignes non-utilis\xE9es (", unusedRows.length, ")"), h("table", null, unusedRows.map(function (row) {
-    return h("tr", null, h("td", null, row["CodRD"], row["FI"]), h("td", null, "F", row["Fonction"]), h("td", null, "C", row["Chapitre"]), h("td", null, "N", row["Nature"]), h("td", null, row["MtReal"]));
+    return h("tr", null, h("td", null, row["CodRD"], row["FI"]), h("td", null, "F", row["Fonction"]), h("td", null, "C", row["Chapitre"]), h("td", null, "N", row["Nature"]), h("td", {
+      class: "money-amount"
+    }, row["MtReal"].toLocaleString('fr-FR', {
+      style: 'currency',
+      currency: 'EUR'
+    })));
   })), h("h2", null, "Lignes utilis\xE9es plus qu'une fois (", rowsUsedMoreThanOnce.length, ")"), h("table", null, rowsUsedMoreThanOnce.map(function (_ref4) {
     var row = _ref4.row,
         aggregationSets = _ref4.aggregationSets;
@@ -7928,44 +7933,127 @@ function AggregationAnalysis (_ref3) {
   })));
 }
 
-function AggregationDescriptionLeafEditor(_ref) {
-  var aggregationDescriptionLeaf = _ref.aggregationDescriptionLeaf,
-      aggregatedDocumentBudgetaireCorrespondingNode = _ref.aggregatedDocumentBudgetaireCorrespondingNode,
-      onIdChange = _ref.onIdChange,
-      onNameChange = _ref.onNameChange,
-      onFormulaChange = _ref.onFormulaChange;
+var FormulaEditor =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(FormulaEditor, _Component);
+
+  function FormulaEditor(props) {
+    var _this;
+
+    _classCallCheck(this, FormulaEditor);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(FormulaEditor).call(this, props));
+    _this.state = {
+      value: props.formula
+    };
+    var onFormulaChange = props.onFormulaChange;
+    _this.inputElement = undefined;
+
+    _this.setTextInputRef = function (element) {
+      _this.inputElement = element;
+    };
+
+    _this.focusTextInput = function () {
+      // Focus the text input using the raw DOM API
+      if (_this.inputElement) _this.inputElement.focus();
+    };
+
+    _this.handleChange = function (e) {
+      var value = e.target.value;
+
+      _this.setState({
+        value: value
+      });
+
+      onFormulaChange(value);
+    };
+
+    _this.buttonClick = function (e) {
+      var value = _this.state.value + e.target.textContent;
+
+      _this.setState({
+        value: value
+      });
+
+      onFormulaChange(value);
+
+      _this.focusTextInput();
+    };
+
+    return _this;
+  }
+
+  _createClass(FormulaEditor, [{
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      // autofocus the input on mount
+      this.focusTextInput();
+    }
+  }, {
+    key: "render",
+    value: function render(props, _ref) {
+      var _this2 = this;
+
+      var value = _ref.value;
+      // RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)
+      return h("section", {
+        class: "formula-editor"
+      }, h("div", {
+        class: "buttons"
+      }, ['DF', 'RF', 'DI', 'RI', '∩', '∪'].map(function (text) {
+        return h("button", {
+          onClick: _this2.buttonClick
+        }, text);
+      })), h("input", {
+        type: "text",
+        value: value,
+        ref: this.setTextInputRef,
+        onInput: this.handleChange
+      }));
+    }
+  }]);
+
+  return FormulaEditor;
+}(Component);
+
+function AggregationDescriptionLeafEditor(_ref2) {
+  var aggregationDescriptionLeaf = _ref2.aggregationDescriptionLeaf,
+      aggregatedDocumentBudgetaireCorrespondingNode = _ref2.aggregatedDocumentBudgetaireCorrespondingNode,
+      onFormulaChange = _ref2.onFormulaChange;
   var id = aggregationDescriptionLeaf.id,
       name = aggregationDescriptionLeaf.name,
       formula = aggregationDescriptionLeaf.formula;
-  /*
-      <input type="text" value=${id} onInput=${onIdChange} />
-      <input type="text" value=${name} onInput=${onNameChange} />
-  */
-
   return h("div", {
-    class: "formula-editor"
+    class: "formula-editor-with-preview"
   }, h("h1", null, name, " ", h("small", null, "(", id, ")")), h("div", null, h("strong", null, "Formule"), " ", h("a", {
     class: "help",
     target: "_blank",
     href: "./exemples_formules.html"
-  }, "?"), h("input", {
-    type: "text",
-    value: formula,
-    onInput: function onInput(e) {
-      return onFormulaChange(e.target.value);
-    }
+  }, "?"), h(FormulaEditor, {
+    key: id,
+    formula: formula,
+    onFormulaChange: onFormulaChange
   }), h("table", {
     class: "summary"
   }, h("tr", null, h("td", null, "Nombre d'\xE9l\xE9ments"), h("td", null, h("strong", null, aggregatedDocumentBudgetaireNodeElements(aggregatedDocumentBudgetaireCorrespondingNode).size))), h("tr", null, h("td", null, "Total"), h("td", {
     class: "money-amount"
-  }, h("strong", null, aggregatedDocumentBudgetaireNodeTotal(aggregatedDocumentBudgetaireCorrespondingNode).toFixed(2) + '€')))), h("table", {
+  }, h("strong", null, aggregatedDocumentBudgetaireNodeTotal(aggregatedDocumentBudgetaireCorrespondingNode).toLocaleString('fr-FR', {
+    style: 'currency',
+    currency: 'EUR'
+  }))))), h("table", {
     class: "formula-rows"
   }, h("thead", null, h("tr", null, ['RDFI', 'Fonction', 'Nature', 'Montant'].map(function (s) {
     return h("th", null, s);
-  }))), h("tbody", null, aggregatedDocumentBudgetaireCorrespondingNode.elements.toArray().map(function (r) {
+  }))), h("tbody", null, aggregatedDocumentBudgetaireCorrespondingNode.elements.toArray().sort(function (r1, r2) {
+    return r2['MtReal'] - r1['MtReal'];
+  }).map(function (r) {
     return h("tr", null, h("td", null, r['CodRD'] + r['FI']), h("td", null, r['Fonction']), h("td", null, r['Nature']), h("td", {
       class: "money-amount"
-    }, r['MtReal'].toFixed(2) + '€'));
+    }, r['MtReal'].toLocaleString('fr-FR', {
+      style: 'currency',
+      currency: 'EUR'
+    })));
   })))));
 }
 
@@ -7989,22 +8077,22 @@ function (_Component) {
 
   _createClass(MillerColumn, [{
     key: "render",
-    value: function render(_ref2, _ref3) {
+    value: function render(_ref, _ref2) {
       var _this2 = this;
 
-      var aggregationDescription = _ref2.aggregationDescription,
-          addChild = _ref2.addChild,
-          editChild = _ref2.editChild,
-          removeChild = _ref2.removeChild,
-          onNodeSelection = _ref2.onNodeSelection,
-          selectedChildId = _ref2.selectedChildId,
-          isLast = _ref2.isLast;
-      var adding = _ref3.adding,
-          editingNode = _ref3.editingNode;
+      var aggregationDescription = _ref.aggregationDescription,
+          addChild = _ref.addChild,
+          editChild = _ref.editChild,
+          removeChild = _ref.removeChild,
+          onNodeSelection = _ref.onNodeSelection,
+          selectedChildId = _ref.selectedChildId,
+          isLast = _ref.isLast;
+      var adding = _ref2.adding,
+          editingNode = _ref2.editingNode;
       return h("ol", null, aggregationDescription.children.valueSeq().toArray().map(function (node) {
         var isSelected = node.id === selectedChildId;
         return !editingNode || editingNode.id !== node.id ? h("li", {
-          class: [isSelected ? 'selected' : undefined, node.children ? 'subgroup' : 'formula'].filter(function (x) {
+          class: [isSelected ? 'selected' : undefined, node.children ? 'group' : 'formula'].filter(function (x) {
             return x;
           }).join(' '),
           onClick: function onClick() {
@@ -8040,9 +8128,10 @@ function (_Component) {
             editingNode: undefined
           });
         }
-      }, h("label", null, "Identifiant", h("input", {
+      }, h("label", null, "Codification unique", h("input", {
         autocomplete: "off",
         name: "id",
+        placeholder: "DF.1.7.2",
         defaultValue: editingNode && editingNode.id
       })), h("label", null, "Nom", h("input", {
         autocomplete: "off",
@@ -8052,8 +8141,8 @@ function (_Component) {
         defaultChecked: editingNode ? editingNode.children : true,
         type: "radio",
         name: "type",
-        value: "subgroup"
-      }), "Sous-groupe"), h("label", null, h("input", {
+        value: "group"
+      }), "Groupe"), h("label", null, h("input", {
         defaultChecked: editingNode && 'formula' in editingNode,
         type: "radio",
         name: "type",
@@ -8096,16 +8185,16 @@ function (_Component) {
 }(Component); // https://en.wikipedia.org/wiki/Miller_columns
 
 
-function MillerColumns(_ref4) {
-  var aggregationDescription = _ref4.aggregationDescription,
-      aggregatedDocumentBudgetaire = _ref4.aggregatedDocumentBudgetaire,
-      selectedList = _ref4.selectedList,
-      _ref4$aggregationDesc = _ref4.aggregationDescriptionMutations,
-      _addChild = _ref4$aggregationDesc.addChild,
-      _removeChild = _ref4$aggregationDesc.removeChild,
-      _editChild = _ref4$aggregationDesc.editChild,
-      _onNodeSelection = _ref4$aggregationDesc.selectNode,
-      _onFormulaChange = _ref4$aggregationDesc.changeFormula;
+function MillerColumns(_ref3) {
+  var aggregationDescription = _ref3.aggregationDescription,
+      aggregatedDocumentBudgetaire = _ref3.aggregatedDocumentBudgetaire,
+      selectedList = _ref3.selectedList,
+      _ref3$aggregationDesc = _ref3.aggregationDescriptionMutations,
+      _addChild = _ref3$aggregationDesc.addChild,
+      _removeChild = _ref3$aggregationDesc.removeChild,
+      _editChild = _ref3$aggregationDesc.editChild,
+      selectNode = _ref3$aggregationDesc.selectNode,
+      changeFormula = _ref3$aggregationDesc.changeFormula;
   var firstSelectedId = selectedList.first();
   return h("section", {
     class: "miller-columns"
@@ -8125,7 +8214,7 @@ function MillerColumns(_ref4) {
       _removeChild(aggregationDescription, child);
     },
     onNodeSelection: function onNodeSelection(id) {
-      return _onNodeSelection(id, 0);
+      return selectNode(id, 0);
     }
   }), selectedList.map(function (id, i) {
     var keyPath = selectedList.slice(0, i + 1).map(function (id) {
@@ -8146,21 +8235,21 @@ function MillerColumns(_ref4) {
         _removeChild(node, child);
       },
       onNodeSelection: function onNodeSelection(id) {
-        return _onNodeSelection(id, i + 1);
+        return selectNode(id, i + 1);
       }
     }) : h(AggregationDescriptionLeafEditor, {
       aggregationDescriptionLeaf: node,
       aggregatedDocumentBudgetaireCorrespondingNode: aggregatedDocumentBudgetaire.getIn(keyPath),
       onFormulaChange: function onFormulaChange(formula) {
-        return _onFormulaChange(node, formula);
+        return changeFormula(node, formula);
       }
     });
   }).toArray()));
 }
 
-function AggregationDescriptionImportExport(_ref5) {
-  var triggerAggregationDescriptionDownload = _ref5.triggerAggregationDescriptionDownload,
-      importAggregationDescription = _ref5.importAggregationDescription;
+function AggregationDescriptionImportExport(_ref4) {
+  var triggerAggregationDescriptionDownload = _ref4.triggerAggregationDescriptionDownload,
+      importAggregationDescription = _ref4.importAggregationDescription;
   return h("section", {
     class: "aggregation-description-import-export"
   }, h("section", {
@@ -8459,7 +8548,7 @@ var store = new Store({
         var id = _ref.id,
             name = _ref.name,
             type = _ref.type;
-        var newNode = type === 'subgroup' ? new AggregationDescription({
+        var newNode = type === 'group' ? new AggregationDescription({
           id: id,
           name: name,
           children: new OrderedMap()
@@ -8472,7 +8561,11 @@ var store = new Store({
         var nodeKeyPath = parentKeyPath.push('children', id);
         aggregationDescriptionNodeToKeyPath.set(newNode, nodeKeyPath);
         state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode);
-        fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription);
+        fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription); // select newly created node
+
+        state.millerColumnSelection = aggregationDescriptionNodeToKeyPath.get(newNode).filter(function (key) {
+          return key !== 'children';
+        });
       },
       editChild: function editChild(state, parent, currentChild, newChildData) {
         var name = newChildData.name,
@@ -8482,7 +8575,7 @@ var store = new Store({
             children = currentChild.children;
         var parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent);
         var childKeyPath = parentKeyPath.push('children', id);
-        var newNode = type === 'subgroup' ? new AggregationDescription({
+        var newNode = type === 'group' ? new AggregationDescription({
           id: id,
           name: name,
           children: children || new OrderedMap()
