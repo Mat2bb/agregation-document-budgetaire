@@ -5,7 +5,7 @@ import makeLigneBudgetFilterFromFormula from '../DocumentBudgetaireQueryLanguage
 
 export default memoize(function makeAggregateFunction(aggregationDescription){
 
-    function aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(aggregationDescriptionNode, documentBudgetaire){
+    const aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode = memoize(function(aggregationDescriptionNode, documentBudgetaire){
         const {id, name, children, formula} = aggregationDescriptionNode;
 
         return children ?
@@ -19,7 +19,7 @@ export default memoize(function makeAggregateFunction(aggregationDescription){
                 id, name, 
                 elements: documentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula, documentBudgetaire.Exer))
             })
-    }
+    });
 
     return memoize(function aggregate(docBudg){
         return aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(aggregationDescription, docBudg)
