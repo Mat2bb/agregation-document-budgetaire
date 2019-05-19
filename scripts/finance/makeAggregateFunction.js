@@ -1,9 +1,11 @@
+import memoize from 'fast-memoize'
+
 import {AggregatedDocumentBudgetaire, AggregatedDocumentBudgetaireLeaf} from './AggregationDataStructures.js'
 import makeLigneBudgetFilterFromFormula from '../DocumentBudgetaireQueryLanguage/makeLigneBudgetFilterFromFormula.js'
 
-export default function makeAggregateFunction(aggregationDescription){
+export default memoize(function makeAggregateFunction(aggregationDescription){
 
-    function aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(aggregationDescriptionNode, documentBudgetaire){
+    const aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode = memoize(function(aggregationDescriptionNode, documentBudgetaire){
         const {id, name, children, formula} = aggregationDescriptionNode;
 
         return children ?
@@ -17,9 +19,9 @@ export default function makeAggregateFunction(aggregationDescription){
                 id, name, 
                 elements: documentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula, documentBudgetaire.Exer))
             })
-    }
+    });
 
-    return function aggregate(docBudg){
+    return memoize(function aggregate(docBudg){
         return aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(aggregationDescription, docBudg)
-    }
-}
+    })
+})

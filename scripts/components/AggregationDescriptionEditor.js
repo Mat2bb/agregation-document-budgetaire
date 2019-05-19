@@ -24,6 +24,7 @@ class MillerColumn extends Component {
                         return !editingNode || editingNode.id !== node.id ? 
                             html`
                                 <li 
+                                    key=${node.id}
                                     class=${[
                                         isSelected ? 'selected' : undefined,
                                         node.children ? 'group' : 'formula'
@@ -129,6 +130,7 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
 
                     return node.children ? 
                         html`<${MillerColumn} 
+                            key=${id}
                             aggregationDescription=${node} 
                             selectedChildId=${selectedList.get(i+1)}
                             isLast=${i === selectedList.size - 2}

@@ -40,6 +40,8 @@ export default function({store}){
                 const blob = new Blob([content], {type: 'application/json'});
                 const blobUrl = URL.createObjectURL(blob);
 
+                const date = new Date();
+
                 const a = document.createElement('a');
                 a.style.position = "absolute"; // getting off document flow
                 // making an effort to hide the element as much as possible
@@ -47,7 +49,9 @@ export default function({store}){
                 a.style.opacity = 0;
                 
                 a.setAttribute('href', blobUrl);
-                a.setAttribute('download', 'description-agrégation.json');
+                a.setAttribute('download', 
+                    `description-agrégation-${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}-${date.getHours().toString().padStart(2, '0')}h${date.getMinutes().toString().padStart(2, '0')}.json`
+                );
                 document.body.appendChild(a)
                 a.click();
                 document.body.removeChild(a);

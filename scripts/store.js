@@ -44,6 +44,7 @@ export default new Store({
                 fillAggregationDescriptionNodeToKeyPath(aggregationDescription)
 
                 state.aggregationDescription = aggregationDescription
+                state.millerColumnSelection = new List()
             },
             addChild(state, parent, {id, name, type}){
                 const newNode = type === 'group' ? 
