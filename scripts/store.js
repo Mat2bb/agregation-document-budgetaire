@@ -3,7 +3,7 @@ import { OrderedMap, List } from 'immutable';
 import Store from 'baredux'
 
 import {AggregationDescription, AggregationDescriptionLeaf} from './finance/AggregationDataStructures.js'
-import {makeAsyncMutationFunctions} from './asyncStatusHelpers.js'
+import {ASYNC_STATUS, STATUS_PENDING, STATUS_ERROR, STATUS_VALUE} from './asyncStatusHelpers.js'
 
 
 const aggregationDescriptionNodeToKeyPath = new WeakMap()
@@ -36,7 +36,8 @@ export default new Store({
     state: {
         millerColumnSelection: new List(),
         aggregationDescription: undefined,
-        testedDocumentBudgetaire: undefined
+        testedDocumentBudgetaireWithPlanDeCompte: undefined,
+        documentBudgetairesWithPlanDeCompte: []
     },
     mutations: {
         aggregationDescription: {
@@ -115,6 +116,62 @@ export default new Store({
                 fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
             }
         },
-        testedDocumentBudgetaire: makeAsyncMutationFunctions('testedDocumentBudgetaire')
+        documentBudgetaires: {
+            add: {
+                setPending(state, i, pendingValue){
+                    pendingValue[ASYNC_STATUS] = STATUS_PENDING;
+                    state.documentBudgetairesWithPlanDeCompte[i] = {
+                        documentBudgetaire: pendingValue
+                    }
+                },
+                setError(state, i, error){
+                    error[ASYNC_STATUS] = STATUS_ERROR;
+                    state.documentBudgetairesWithPlanDeCompte[i] = {
+                        documentBudgetaire: error
+                    }
+                },
+                setValue(state, i, value){
+                    value[ASYNC_STATUS] = STATUS_VALUE;
+                    state.documentBudgetairesWithPlanDeCompte[i] = {
+                        documentBudgetaire: value
+                    }
+                }
+            },
+            planDeCompte: {
+                setPending(state, docBudg, pendingValue){
+                    pendingValue[ASYNC_STATUS] = STATUS_PENDING;
+                    const dbwpdc = state.documentBudgetairesWithPlanDeCompte.find(
+                        ({documentBudgetaire}) => documentBudgetaire === docBudg
+                    )
+                    
+                    dbwpdc.planDeCompte = pendingValue;
+                },
+                setError(state, docBudg, error){
+                    error[ASYNC_STATUS] = STATUS_ERROR;
+                    
+                    const dbwpdc = state.documentBudgetairesWithPlanDeCompte.find(
+                        ({documentBudgetaire}) => documentBudgetaire === docBudg
+                    )
+                    
+                    dbwpdc.planDeCompte = error;
+                },
+                setValue(state, docBudg, value){
+                    value[ASYNC_STATUS] = STATUS_VALUE;
+                    
+                    const dbwpdc = state.documentBudgetairesWithPlanDeCompte.find(
+                        ({documentBudgetaire}) => documentBudgetaire === docBudg
+                    )
+                    
+                    dbwpdc.planDeCompte = value;
+                }
+            }
+        },
+        testedDocumentBudgetaireWithPlanDeCompte: {
+            set(state, docBudg){
+                state.testedDocumentBudgetaireWithPlanDeCompte = state.documentBudgetairesWithPlanDeCompte.find(
+                    ({documentBudgetaire}) => documentBudgetaire === docBudg
+                )
+            }
+        }
     }
 })

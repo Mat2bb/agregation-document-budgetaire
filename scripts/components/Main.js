@@ -8,25 +8,32 @@ import {AggregationDescriptionToJSON} from '../finance/AggregationDataStructures
 import {ASYNC_STATUS, STATUS_VALUE} from '../asyncStatusHelpers.js';
 import _actions from '../actions'
 
-function mapStateToProps({aggregationDescription, testedDocumentBudgetaire, millerColumnSelection}){
+function mapStateToProps({aggregationDescription, testedDocumentBudgetaireWithPlanDeCompte = {}, documentBudgetairesWithPlanDeCompte, millerColumnSelection}){
+    const {documentBudgetaire, planDeCompte} = testedDocumentBudgetaireWithPlanDeCompte;
+
     return {
         aggregationDescription,
         selectedList: millerColumnSelection,
-        aggregatedDocumentBudgetaire: aggregationDescription && testedDocumentBudgetaire && testedDocumentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ?
-            makeAggregateFunction(aggregationDescription)(testedDocumentBudgetaire) :
-            undefined,
-        documentBudgetaire: testedDocumentBudgetaire && testedDocumentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ?
-            testedDocumentBudgetaire :
-            undefined
+        aggregatedDocumentBudgetaire: aggregationDescription && 
+            documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE &&
+            planDeCompte && planDeCompte[ASYNC_STATUS] === STATUS_VALUE ?
+                makeAggregateFunction(aggregationDescription, planDeCompte)(documentBudgetaire) :
+                undefined,
+        documentBudgetairesWithPlanDeCompte: documentBudgetairesWithPlanDeCompte.filter(
+            ({documentBudgetaire, planDeCompte}) => 
+                documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE &&
+                planDeCompte && planDeCompte[ASYNC_STATUS] === STATUS_VALUE
+        )
     }
 }
 
 export default function({store}){
     const actions =_actions(store);
 
-    const {testedDocumentBudgetaire, aggregationDescription} = store.state;
-    const docBudg = testedDocumentBudgetaire && testedDocumentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? 
-        testedDocumentBudgetaire : 
+    const {testedDocumentBudgetaireWithPlanDeCompte = {}, aggregationDescription} = store.state;
+    const {documentBudgetaire, planDeCompte} = testedDocumentBudgetaireWithPlanDeCompte;
+    const docBudg = documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? 
+        documentBudgetaire : 
         undefined
 
     const props = Object.assign(

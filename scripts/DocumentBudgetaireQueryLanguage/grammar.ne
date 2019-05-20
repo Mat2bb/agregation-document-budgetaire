@@ -24,7 +24,7 @@ SUBSET -> RD        {% id %}
     | RDFI          {% id %}
 #    | OPERATION     {% id %}
     | CHAPITRE      {% id %}
-    | NATURE        {% id %}
+    | COMPTE        {% id %}
     | FONCTION      {% id %}
     | ANNEE         {% id %}
 
@@ -38,9 +38,9 @@ RDFI -> RD FI                   {% ts => ts.join('') %}
 
 # OPERATION -> "OR"               {% id %}
 
-CHAPITRE -> "C" [0-9]:+         {% ts => ts[0]+ts[1].join('') %}
+CHAPITRE -> "Ch" [0-9]:+         {% ts => ts[0]+ts[1].join('') %}
 
-NATURE -> "N" [0-9]:+           {% ts => ts[0]+ts[1].join('') %}
+COMPTE -> "C" [0-9]:+           {% ts => ts[0]+ts[1].join('') %}
 
 FONCTION -> "F" [0-9]:+         {% ts => ts[0]+ts[1].join('') %}
 
