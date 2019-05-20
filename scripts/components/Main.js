@@ -5,7 +5,7 @@ import ContextHeader from './ContextHeader.js'
 
 import makeAggregateFunction from '../finance/makeAggregateFunction.js'
 import {AggregationDescriptionToJSON} from '../finance/AggregationDataStructures.js'
-import {ASYNC_STATUS, STATUS_VALUE} from '../asyncStatusHelpers.js';
+import {ASYNC_STATUS, STATUS_VALUE, STATUS_ERROR} from '../asyncStatusHelpers.js';
 import _actions from '../actions'
 
 function mapStateToProps({aggregationDescription, testedDocumentBudgetaireWithPlanDeCompte = {}, documentBudgetairesWithPlanDeCompte, millerColumnSelection}){
@@ -31,7 +31,7 @@ export default function({store}){
     const actions =_actions(store);
 
     const {testedDocumentBudgetaireWithPlanDeCompte = {}, aggregationDescription} = store.state;
-    const {documentBudgetaire, planDeCompte} = testedDocumentBudgetaireWithPlanDeCompte;
+    const {documentBudgetaire} = testedDocumentBudgetaireWithPlanDeCompte;
     const docBudg = documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? 
         documentBudgetaire : 
         undefined
@@ -68,9 +68,15 @@ export default function({store}){
         actions
     )
 
+    const errors = store.state.documentBudgetairesWithPlanDeCompte
+        .filter(({planDeCompte}) => planDeCompte && planDeCompte[ASYNC_STATUS] === STATUS_ERROR)
+        .map(({documentBudgetaire: {Nomenclature, Exer}, planDeCompte}) => {
+            return `Le plan de compte pour la nomenclature ${Nomenclature}, année ${Exer} n'a pas pu être récupéré (${planDeCompte.url}, "${planDeCompte.message}")`
+        })
+
     return html`
         <main>
-            <${ContextHeader} documentBudgetaire=${docBudg} onNewDocumentBudgetaireText=${actions.onNewDocumentBudgetaireText} /> 
+            <${ContextHeader} documentBudgetaire=${docBudg} onNewDocumentBudgetaireText=${actions.onNewDocumentBudgetaireText} errors=${errors}/> 
             <${Aggregation} ...${props}/>
         </main>
     `

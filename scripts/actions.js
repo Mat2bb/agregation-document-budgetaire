@@ -1,7 +1,6 @@
 import {xml} from 'd3-fetch'
 
 import {fromXMLDocument} from './finance/planDeCompte.js'
-import makeNatureToChapitreFI from './finance/makeNatureToChapitreFI.js'
 import xmlDocumentToDocumentBudgetaire from './finance/xmlDocumentToDocumentBudgetaire.js'
 
 function makePlanDeCompteURL(docBudg){
@@ -15,7 +14,7 @@ export default function(store){
 
     return {
         onNewDocumentBudgetaireText(fileText){
-            const stateDocBudgIndex =  store.state.documentBudgetairesWithPlanDeCompte.length
+            const stateDocBudgIndex = 0;// store.state.documentBudgetairesWithPlanDeCompte.length
 
             const docBudgP = Promise.resolve()
             .then(() => (new DOMParser()).parseFromString(fileText, "text/xml"))
@@ -44,7 +43,15 @@ export default function(store){
 
                 store.mutations.documentBudgetaires.planDeCompte.setPending(docBudg, planDeCompteP)
 
-                planDeCompteP.catch(err => store.mutations.documentBudgetaires.planDeCompte.setError(docBudg, err))
+                planDeCompteP.catch(err => {
+                    store.mutations.documentBudgetaires.planDeCompte.setError(
+                        docBudg, 
+                        Object.assign(
+                            err,
+                            {url: planDeCompteURL}
+                        )
+                    )
+                })
             })
         },
 
