@@ -4,24 +4,8 @@ function _slicedToArray(arr, i) {
   return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest();
 }
 
-function _toConsumableArray(arr) {
-  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
-}
-
-function _arrayWithoutHoles(arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-    return arr2;
-  }
-}
-
 function _arrayWithHoles(arr) {
   if (Array.isArray(arr)) return arr;
-}
-
-function _iterableToArray(iter) {
-  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
 }
 
 function _iterableToArrayLimit(arr, i) {
@@ -48,10 +32,6 @@ function _iterableToArrayLimit(arr, i) {
   }
 
   return _arr;
-}
-
-function _nonIterableSpread() {
-  throw new TypeError("Invalid attempt to spread non-iterable instance");
 }
 
 function _nonIterableRest() {
@@ -423,75 +403,6 @@ function parser(type) {
 }
 
 var xml = parser("application/xml");
-
-function makeNatureToChapitreFI (plansDeCompte) {
-  var dataByExer = new Map();
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    var _loop = function _loop() {
-      var pc = _step.value;
-      var exer = Number(pc.getElementsByTagName('Nomenclature')[0].getAttribute('Exer'));
-      var chapitreCodeByNatureR = new Map();
-      var chapitreCodeByNatureD = new Map();
-      var FIByChapitreCode = new Map();
-      Array.from(pc.getElementsByTagName('Compte')).forEach(function (c) {
-        var code = c.getAttribute('Code');
-        if (!chapitreCodeByNatureR.has(code)) chapitreCodeByNatureR.set(code, c.getAttribute('RR'));
-        if (!chapitreCodeByNatureD.has(code)) chapitreCodeByNatureD.set(code, c.getAttribute('DR'));
-      });
-      Array.from(pc.getElementsByTagName('Chapitre')).map(function (c) {
-        var code = c.getAttribute('Code');
-        if (!FIByChapitreCode.has(code)) FIByChapitreCode.set(code, c.getAttribute('Section'));
-      });
-      dataByExer.set(exer, {
-        chapitreCodeByNatureR: chapitreCodeByNatureR,
-        chapitreCodeByNatureD: chapitreCodeByNatureD,
-        FIByChapitreCode: FIByChapitreCode
-      });
-    };
-
-    for (var _iterator = plansDeCompte[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      _loop();
-    }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator.return != null) {
-        _iterator.return();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
-    }
-  }
-
-  var exers = Array.from(dataByExer.keys());
-  var minExer = Math.min.apply(Math, _toConsumableArray(exers));
-  return function (exer, RD, nature) {
-    if (exer < minExer) exer = minExer;
-
-    var _dataByExer$get = dataByExer.get(exer),
-        chapitreCodeByNatureR = _dataByExer$get.chapitreCodeByNatureR,
-        chapitreCodeByNatureD = _dataByExer$get.chapitreCodeByNatureD,
-        FIByChapitreCode = _dataByExer$get.FIByChapitreCode;
-
-    var chapitreCodeByNature = RD === 'R' ? chapitreCodeByNatureR : chapitreCodeByNatureD;
-    var chapitreCode = chapitreCodeByNature.get(nature);
-    if (!chapitreCode) console.warn('No chapitreCode for', RD, nature);
-    var FI = FIByChapitreCode.get(chapitreCode);
-    if (!FI) console.warn('No FI (section) for', RD, nature, chapitreCode);
-    return {
-      FI: FI,
-      Chapitre: chapitreCode
-    };
-  };
-}
 
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
@@ -6049,18 +5960,13 @@ function setProp(prototype, name) {
 /*
     Keys are the one used by the Actes Budgétaire project XML files (<LigneBudget> specifically) as described in
     http://odm-budgetaire.org/doc-schema/Class_Budget_xsd_Complex_Type_TBudget.html#TBudget_LigneBudget
-
-    'FI' has been added and refers to 'Fonctionnement/Investissement'
-    'Chapitre' was added as well
 */
 
 var LigneBudgetKeys = {
   'Nature': undefined,
   'Fonction': undefined,
   'CodRD': undefined,
-  'MtReal': undefined,
-  'Chapitre': undefined,
-  'FI': undefined
+  'MtReal': undefined
 };
 var LigneBudgetRecord = Record(LigneBudgetKeys);
 var SplitLigneBudgetRecord = Record(Object.assign({
@@ -6080,7 +5986,7 @@ function makeLigneBudgetId(ligneBudget) {
   return [ligneBudget['CodRD'], ligneBudget['Fonction'], ligneBudget['Nature']].join(' ');
 }
 
-function xmlDocumentToDocumentBudgetaire (doc, natureToChapitreFI) {
+function xmlDocumentToDocumentBudgetaire(doc) {
   var BlocBudget = doc.getElementsByTagName('BlocBudget')[0];
   var exer = Number(BlocBudget.getElementsByTagName('Exer')[0].getAttribute('V'));
   var xmlRowsById = new Map();
@@ -6096,7 +6002,6 @@ function xmlDocumentToDocumentBudgetaire (doc, natureToChapitreFI) {
       ret[key] = l.getElementsByTagName(key)[0].getAttribute('V');
     });
     ret['MtReal'] = Number(ret['MtReal']);
-    Object.assign(ret, natureToChapitreFI(exer, ret['CodRD'], ret['Nature']));
     return ret;
   });
   var _iteratorNormalCompletion = true;
@@ -6651,7 +6556,7 @@ var grammar = createCommonjsModule(function (module) {
         "postprocess": id
       }, {
         "name": "SUBSET",
-        "symbols": ["NATURE"],
+        "symbols": ["COMPTE"],
         "postprocess": id
       }, {
         "name": "SUBSET",
@@ -6692,6 +6597,16 @@ var grammar = createCommonjsModule(function (module) {
           return ts.join('');
         }
       }, {
+        "name": "CHAPITRE$string$1",
+        "symbols": [{
+          "literal": "C"
+        }, {
+          "literal": "h"
+        }],
+        "postprocess": function joiner(d) {
+          return d.join('');
+        }
+      }, {
         "name": "CHAPITRE$ebnf$1",
         "symbols": [/[0-9]/]
       }, {
@@ -6702,26 +6617,24 @@ var grammar = createCommonjsModule(function (module) {
         }
       }, {
         "name": "CHAPITRE",
-        "symbols": [{
-          "literal": "C"
-        }, "CHAPITRE$ebnf$1"],
+        "symbols": ["CHAPITRE$string$1", "CHAPITRE$ebnf$1"],
         "postprocess": function postprocess(ts) {
           return ts[0] + ts[1].join('');
         }
       }, {
-        "name": "NATURE$ebnf$1",
+        "name": "COMPTE$ebnf$1",
         "symbols": [/[0-9]/]
       }, {
-        "name": "NATURE$ebnf$1",
-        "symbols": ["NATURE$ebnf$1", /[0-9]/],
+        "name": "COMPTE$ebnf$1",
+        "symbols": ["COMPTE$ebnf$1", /[0-9]/],
         "postprocess": function arrpush(d) {
           return d[0].concat([d[1]]);
         }
       }, {
-        "name": "NATURE",
+        "name": "COMPTE",
         "symbols": [{
-          "literal": "N"
-        }, "NATURE$ebnf$1"],
+          "literal": "C"
+        }, "COMPTE$ebnf$1"],
         "postprocess": function postprocess(ts) {
           return ts[0] + ts[1].join('');
         }
@@ -6794,7 +6707,7 @@ var grammar = createCommonjsModule(function (module) {
   })();
 });
 
-function matchesSimple(r, year, subset) {
+function matchesSimple(r, planDeCompte, subset) {
   switch (subset) {
     case 'R':
     case 'D':
@@ -6802,43 +6715,43 @@ function matchesSimple(r, year, subset) {
 
     case 'F':
     case 'I':
-      return r['FI'] === subset;
+      return planDeCompte.ligneBudgetFI(r) === subset;
 
     case 'RF':
     case 'RI':
     case 'DF':
     case 'DI':
-      return r['CodRD'] === subset[0] && r['FI'] === subset[1];
+      return r['CodRD'] === subset[0] && planDeCompte.ligneBudgetFI(r) === subset[1];
   }
 
-  if (subset.startsWith('N')) return subset.slice(1) === r['Nature'];
-  if (subset.startsWith('F')) return r['Fonction'].startsWith(subset.slice(1));
-  if (subset.startsWith('C')) return subset.slice(1) === r['Chapitre'];
-  if (subset.startsWith('Ann')) return subset.slice('Ann'.length) === String(year);
+  if (subset.startsWith('Ch')) return planDeCompte.ligneBudgetIsInChapitre(r, subset.slice('Ch'.length));
+  if (subset.startsWith('C')) return planDeCompte.ligneBudgetIsInCompte(r, subset.slice('C'.length));
+  if (subset.startsWith('F')) return planDeCompte.ligneBudgetIsInFonction(r, subset.slice('F'.length));
+  if (subset.startsWith('Ann')) return subset.slice('Ann'.length) === String(planDeCompte.Exer);
   console.warn('matchesSubset - Unhandled case', subset);
 }
 
-function matchesComplex(r, year, combo) {
-  if (typeof combo === 'string') return matchesSimple(r, year, combo); // assert(Array.isArray(combo))
+function matchesComplex(r, planDeCompte, combo) {
+  if (typeof combo === 'string') return matchesSimple(r, planDeCompte, combo); // assert(Array.isArray(combo))
 
   var _combo = _slicedToArray(combo, 3),
       left = _combo[0],
       middle = _combo[1],
       right = _combo[2];
 
-  if (left === '(' && right === ')') return matchesComplex(r, year, middle);else {
+  if (left === '(' && right === ')') return matchesComplex(r, planDeCompte, middle);else {
     var operator = middle;
 
     switch (operator) {
       case '+':
       case '∪':
-        return matchesComplex(r, year, left) || matchesComplex(r, year, right);
+        return matchesComplex(r, planDeCompte, left) || matchesComplex(r, planDeCompte, right);
 
       case '∩':
-        return matchesComplex(r, year, left) && matchesComplex(r, year, right);
+        return matchesComplex(r, planDeCompte, left) && matchesComplex(r, planDeCompte, right);
 
       case '-':
-        return matchesComplex(r, year, left) && !matchesComplex(r, year, right);
+        return matchesComplex(r, planDeCompte, left) && !matchesComplex(r, planDeCompte, right);
 
       default:
         console.warn('matchesSubset - Unhandled case', operator, combo);
@@ -6854,54 +6767,168 @@ var returnFalseFunction = Object.freeze(function () {
     returns a function that can be used in the context of a documentBudgetaire.rows.filter()
 */
 
-var makeLigneBudgetFilterFromFormula = src(function makeLigneBudgetFilterFromFormula(formula, year) {
+var makeLigneBudgetFilterFromFormula = src(function makeLigneBudgetFilterFromFormula(formula, planDeCompte) {
   var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
   try {
     parser.feed(formula);
     if (parser.results[0] === undefined) return returnFalseFunction;else return src(function (budgetRow) {
-      return matchesComplex(budgetRow, year, parser.results[0]);
+      return matchesComplex(budgetRow, planDeCompte, parser.results[0]);
     });
   } catch (e) {
     return returnFalseFunction;
   }
 });
 
-function makeTable(rows, year) {
+function fromXMLDocument(pc) {
+  var Nomenclature = pc.querySelector('Nomenclature');
+  var chapitreCodeByNatureR = new Map();
+  var chapitreCodeByNatureD = new Map();
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = Nomenclature.querySelectorAll('Compte')[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var c = _step.value;
+      var code = c.getAttribute('Code');
+      chapitreCodeByNatureR.set(code, c.getAttribute('RR'));
+      chapitreCodeByNatureD.set(code, c.getAttribute('DR'));
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return != null) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  var FIByChapitreCode = new Map();
+  var _iteratorNormalCompletion2 = true;
+  var _didIteratorError2 = false;
+  var _iteratorError2 = undefined;
+
+  try {
+    for (var _iterator2 = Nomenclature.querySelectorAll('Chapitre')[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var ch = _step2.value;
+
+      var _code = ch.getAttribute('Code');
+
+      FIByChapitreCode.set(_code, ch.getAttribute('Section'));
+    }
+  } catch (err) {
+    _didIteratorError2 = true;
+    _iteratorError2 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
+        _iterator2.return();
+      }
+    } finally {
+      if (_didIteratorError2) {
+        throw _iteratorError2;
+      }
+    }
+  }
+
+  return {
+    Norme: Nomenclature.getAttribute('Norme'),
+    Declinaison: Nomenclature.getAttribute('Declinaison'),
+    Exer: Number(Nomenclature.getAttribute('Exer')),
+    ligneBudgetFI: function ligneBudgetFI(_ref) {
+      var CodRD = _ref.CodRD,
+          Nature = _ref.Nature;
+      var chapitreCodeByNature = CodRD === 'R' ? chapitreCodeByNatureR : chapitreCodeByNatureD;
+      var chapitreCode = chapitreCodeByNature.get(Nature);
+      return FIByChapitreCode.get(chapitreCode);
+    },
+    ligneBudgetIsInChapitre: function ligneBudgetIsInChapitre(_ref2, chapitre) {
+      var CodRD = _ref2.CodRD,
+          Nature = _ref2.Nature;
+      var chapitreCodeByNature = CodRD === 'R' ? chapitreCodeByNatureR : chapitreCodeByNatureD;
+      var chapitreCode = chapitreCodeByNature.get(Nature);
+      return chapitreCode === chapitre;
+    },
+    ligneBudgetIsInCompte: function ligneBudgetIsInCompte(_ref3, compte) {
+      var Nature = _ref3.Nature;
+      var compteElement = Nomenclature.querySelector("Compte[Code=\"".concat(Nature, "\"]"));
+      if (!compteElement) // compte does not exist for this nature
+        return false; // look up to see if the compte is a parent of the LigneBudget's Nature
+
+      var testedCompteElement = compteElement;
+
+      while (testedCompteElement) {
+        if (testedCompteElement.getAttribute('Code') === compte) {
+          return true;
+        } else {
+          testedCompteElement = testedCompteElement.parentNode;
+          if (testedCompteElement.localName.toLowerCase() !== 'Compte'.toLowerCase()) return false;
+        }
+      }
+
+      return false;
+    },
+    ligneBudgetIsInFonction: function ligneBudgetIsInFonction(_ref4, fonction) {
+      var Fonction = _ref4.Fonction;
+      var fonctionElement = Nomenclature.querySelector("RefFonctionnelles RefFonc[Code=\"".concat(Fonction, "\"]"));
+      if (!fonctionElement) // compte does not exist for this nature
+        return false; // look up to see if the compte is a parent of the LigneBudget's Nature
+
+      var testedFonctionElement = fonctionElement;
+
+      while (testedFonctionElement) {
+        if (testedFonctionElement.getAttribute('Code') === fonction) {
+          return true;
+        } else {
+          testedFonctionElement = testedFonctionElement.parentNode;
+          if (testedFonctionElement.localName.toLowerCase() !== 'RefFonc'.toLowerCase()) return false;
+        }
+      }
+
+      return false;
+    }
+  };
+}
+
+function makeTable(rows, year, planDeCompte) {
   return Bouture.section([Bouture.h1('CA Gironde ', year), Bouture.h2(rows.size, ' elements | ', sum(rows.map(function (r) {
     return r['MtReal'];
   })).toFixed(2) + '€'), Bouture.table([Bouture.thead.tr(['RD', 'FI', 'Fonction', 'Nature', 'Montant'].map(function (t) {
     return Bouture.th(t);
   })), Bouture.tbody(rows.map(function (r) {
-    return Bouture.tr([Bouture.td(r['CodRD']), Bouture.td(r['FI']), Bouture.td(r['Fonction']), Bouture.td(r['Nature']), Bouture.td(r['MtReal'].toFixed(2) + '€')]);
+    return Bouture.tr([Bouture.td(r['CodRD']), Bouture.td(planDeCompte.ligneBudgetFI(r)), Bouture.td(r['Fonction']), Bouture.td(r['Nature']), Bouture.td(r['MtReal'].toFixed(2) + '€')]);
   }).toArray())])]);
 }
 
-var docBudgP = Promise.all([xml('./data/CA/CA2017BPAL.xml'), xml('./data/plansDeCompte/plan-de-compte-M52-M52-2017.xml').then(function (pdC) {
-  return makeNatureToChapitreFI([pdC]);
-})]).then(function (_ref) {
-  var _ref2 = _slicedToArray(_ref, 2),
-      doc = _ref2[0],
-      natureToChapitreFI = _ref2[1];
-
-  return xmlDocumentToDocumentBudgetaire(doc, natureToChapitreFI);
-}).then(function (docBudg) {
-  console.log('docBudg', docBudg.toJS());
-  return docBudg;
-}).catch(console.error);
+var planDeCompteP = xml('./data/plansDeCompte/plan-de-compte-M52-M52-2017.xml').then(fromXMLDocument);
+var docBudgP = xml('./data/CA/CA2017BPAL.xml').then(xmlDocumentToDocumentBudgetaire).catch(console.error);
+docBudgP.then(function (docBudg) {
+  return console.log('docBudg', docBudg.toJS());
+});
 document.addEventListener('DOMContentLoaded', function (e) {
   var input = document.body.querySelector('input');
-  docBudgP.then(function (docBudg) {
-    function makeOutputFromFormula(formula, year) {
-      var filter = makeLigneBudgetFilterFromFormula(formula, year);
-      return Bouture.output([makeTable(docBudg['rows'].filter(filter), docBudg['Exer'])]).getElement();
+  Promise.all([docBudgP, planDeCompteP]).then(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 2),
+        docBudg = _ref2[0],
+        planDeCompte = _ref2[1];
+
+    function makeOutputFromFormula(formula, planDeCompte) {
+      var filter = makeLigneBudgetFilterFromFormula(formula, planDeCompte);
+      return Bouture.output([makeTable(docBudg['rows'].filter(filter), docBudg['Exer'], planDeCompte)]).getElement();
     }
 
     var memzMakeOutputFromFormula = src(makeOutputFromFormula);
     var changeHashTimeout;
     input.addEventListener('input', function (e) {
       var formula = e.target.value.trim();
-      document.body.querySelector('output').replaceWith(memzMakeOutputFromFormula(formula, docBudg.Exer)); // save in hash if formula stayed unchanged for 3secs
+      document.body.querySelector('output').replaceWith(memzMakeOutputFromFormula(formula, planDeCompte)); // save in hash if formula stayed unchanged for 3secs
 
       clearTimeout(changeHashTimeout);
       changeHashTimeout = setTimeout(function () {
@@ -6923,7 +6950,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
   input.value = "";
   input.focus(); // initialize input vith hash value
 
-  docBudgP.then(hashUpdate);
+  Promise.all([docBudgP, planDeCompteP]).then(hashUpdate);
   window.addEventListener('hashchange', hashUpdate); // Create examples list
 
   var examples = [{
@@ -6945,20 +6972,23 @@ document.addEventListener('DOMContentLoaded', function (e) {
     formula: 'DF∩(F4 ∪ F5)',
     description: 'toutes les dépenses de fonctionnement des fonctions 4 et 5'
   }, {
-    formula: 'DF∩(N64111 ∪ N6451)',
+    formula: 'DF∩(C64111 ∪ C6451)',
     description: 'toutes les dépenses de fonctionnement des natures 64111 et 6451 (salaire + URSSAF)'
   }, {
-    formula: 'DF∩(N64111 ∪ N6451)∩F52',
+    formula: 'DF∩(C64111 ∪ C6451)∩F52',
     description: 'toutes les dépenses de fonctionnement salaires+URSSAF lié à la fonction 52 (Personnes handicapées)'
   }, {
-    formula: 'DF∩((F50∩(N64121 ∪ N64126)) ∪ (F51 - F51∩N6526))',
+    formula: 'DF∩((F50∩(C64121 ∪ C64126)) ∪ (F51 - C6526))',
     description: 'Gironde - social - enfance'
   }, {
-    formula: 'RI∩C16',
+    formula: 'RI∩Ch16',
     description: "toutes les recettes d'investissement du chapitre 16 (emprunts)"
   }, {
-    formula: 'RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)',
+    formula: 'RF∩(C7478141 ∪ C7478142 ∪ C74788∩F53∩Ann2016)',
     description: "Gironde - recettes de fonctionnement - Conf\xE9rence des financeurs"
+  }, {
+    formula: 'DF∩C60 - (F4∪F5∪F8∪F621)',
+    description: "Gironde - d\xE9pense de fonctionnement - Achats et fournitures"
   }];
   var ul = Bouture.ul(examples.map(function (_ref3) {
     var formula = _ref3.formula,

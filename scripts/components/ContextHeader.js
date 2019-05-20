@@ -23,7 +23,7 @@ function DocumentBudgetaireInput({errorMessage, onNewDocumentBudgetaireText}){
     `
 }
 
-export default function({documentBudgetaire, onNewDocumentBudgetaireText}){
+export default function({documentBudgetaire, onNewDocumentBudgetaireText, errors}){
 
     return html`
         <header>
@@ -41,6 +41,14 @@ export default function({documentBudgetaire, onNewDocumentBudgetaireText}){
                                 }
                             </div>
                         `
+                }
+
+                ${
+                    errors && errors.map(err => {
+                        return html`
+                            <strong class="error">Erreur : ${err}</strong>
+                        `
+                    })
                 }
 
                 <${DocumentBudgetaireInput} onNewDocumentBudgetaireText=${onNewDocumentBudgetaireText} />

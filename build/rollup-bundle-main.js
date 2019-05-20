@@ -6915,18 +6915,13 @@ var aggregatedDocumentBudgetaireNodeTotal = src(rawAggregatedDocumentBudgetaireN
 /*
     Keys are the one used by the Actes Budgétaire project XML files (<LigneBudget> specifically) as described in
     http://odm-budgetaire.org/doc-schema/Class_Budget_xsd_Complex_Type_TBudget.html#TBudget_LigneBudget
-
-    'FI' has been added and refers to 'Fonctionnement/Investissement'
-    'Chapitre' was added as well
 */
 
 var LigneBudgetKeys = {
   'Nature': undefined,
   'Fonction': undefined,
   'CodRD': undefined,
-  'MtReal': undefined,
-  'Chapitre': undefined,
-  'FI': undefined
+  'MtReal': undefined
 };
 var LigneBudgetRecord = Record(LigneBudgetKeys);
 var SplitLigneBudgetRecord = Record(Object.assign({
@@ -6946,7 +6941,7 @@ function makeLigneBudgetId(ligneBudget) {
   return [ligneBudget['CodRD'], ligneBudget['Fonction'], ligneBudget['Nature']].join(' ');
 }
 
-function xmlDocumentToDocumentBudgetaire (doc, natureToChapitreFI) {
+function xmlDocumentToDocumentBudgetaire(doc) {
   var BlocBudget = doc.getElementsByTagName('BlocBudget')[0];
   var exer = Number(BlocBudget.getElementsByTagName('Exer')[0].getAttribute('V'));
   var xmlRowsById = new Map();
@@ -6962,7 +6957,6 @@ function xmlDocumentToDocumentBudgetaire (doc, natureToChapitreFI) {
       ret[key] = l.getElementsByTagName(key)[0].getAttribute('V');
     });
     ret['MtReal'] = Number(ret['MtReal']);
-    Object.assign(ret, natureToChapitreFI(exer, ret['CodRD'], ret['Nature']));
     return ret;
   });
   var _iteratorNormalCompletion = true;
@@ -7076,6 +7070,169 @@ function makeNatureToChapitreFI (plansDeCompte) {
       FI: FI,
       Chapitre: chapitreCode
     };
+  };
+}
+
+function fromXMLDocument(pc) {
+  var Nomenclature = pc.querySelector('Nomenclature');
+  var chapitreCodeByNatureR = new Map();
+  var chapitreCodeByNatureD = new Map();
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = Nomenclature.querySelectorAll('Compte')[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var c = _step.value;
+      var code = c.getAttribute('Code');
+      chapitreCodeByNatureR.set(code, c.getAttribute('RR'));
+      chapitreCodeByNatureD.set(code, c.getAttribute('DR'));
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return != null) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  var FIByChapitreCode = new Map();
+  var _iteratorNormalCompletion2 = true;
+  var _didIteratorError2 = false;
+  var _iteratorError2 = undefined;
+
+  try {
+    for (var _iterator2 = Nomenclature.querySelectorAll('Chapitre')[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var ch = _step2.value;
+
+      var _code = ch.getAttribute('Code');
+
+      FIByChapitreCode.set(_code, ch.getAttribute('Section'));
+    }
+  } catch (err) {
+    _didIteratorError2 = true;
+    _iteratorError2 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
+        _iterator2.return();
+      }
+    } finally {
+      if (_didIteratorError2) {
+        throw _iteratorError2;
+      }
+    }
+  }
+
+  return {
+    Norme: Nomenclature.getAttribute('Norme'),
+    Declinaison: Nomenclature.getAttribute('Declinaison'),
+    Exer: Number(Nomenclature.getAttribute('Exer')),
+    ligneBudgetFI: function ligneBudgetFI(_ref) {
+      var CodRD = _ref.CodRD,
+          Nature = _ref.Nature;
+      var chapitreCodeByNature = CodRD === 'R' ? chapitreCodeByNatureR : chapitreCodeByNatureD;
+      var chapitreCode = chapitreCodeByNature.get(Nature);
+      return FIByChapitreCode.get(chapitreCode);
+    },
+    ligneBudgetIsInChapitre: function ligneBudgetIsInChapitre(_ref2, chapitre) {
+      var CodRD = _ref2.CodRD,
+          Nature = _ref2.Nature;
+      var chapitreCodeByNature = CodRD === 'R' ? chapitreCodeByNatureR : chapitreCodeByNatureD;
+      var chapitreCode = chapitreCodeByNature.get(Nature);
+      return chapitreCode === chapitre;
+    },
+    ligneBudgetIsInCompte: function ligneBudgetIsInCompte(_ref3, compte) {
+      var Nature = _ref3.Nature;
+      var compteElement = Nomenclature.querySelector("Compte[Code=\"".concat(Nature, "\"]"));
+      if (!compteElement) // compte does not exist for this nature
+        return false; // look up to see if the compte is a parent of the LigneBudget's Nature
+
+      var testedCompteElement = compteElement;
+
+      while (testedCompteElement) {
+        if (testedCompteElement.getAttribute('Code') === compte) {
+          return true;
+        } else {
+          testedCompteElement = testedCompteElement.parentNode;
+          if (testedCompteElement.localName.toLowerCase() !== 'Compte'.toLowerCase()) return false;
+        }
+      }
+
+      return false;
+    },
+    ligneBudgetIsInFonction: function ligneBudgetIsInFonction(_ref4, fonction) {
+      var Fonction = _ref4.Fonction;
+      var fonctionElement = Nomenclature.querySelector("RefFonctionnelles RefFonc[Code=\"".concat(Fonction, "\"]"));
+      if (!fonctionElement) // compte does not exist for this nature
+        return false; // look up to see if the compte is a parent of the LigneBudget's Nature
+
+      var testedFonctionElement = fonctionElement;
+
+      while (testedFonctionElement) {
+        if (testedFonctionElement.getAttribute('Code') === fonction) {
+          return true;
+        } else {
+          testedFonctionElement = testedFonctionElement.parentNode;
+          if (testedFonctionElement.localName.toLowerCase() !== 'RefFonc'.toLowerCase()) return false;
+        }
+      }
+
+      return false;
+    }
+  };
+}
+
+function makePlanDeCompteURL(docBudg) {
+  var _docBudg$Nomenclature = docBudg.Nomenclature.split('-'),
+      _docBudg$Nomenclature2 = _slicedToArray(_docBudg$Nomenclature, 2),
+      norme = _docBudg$Nomenclature2[0],
+      sousNorme = _docBudg$Nomenclature2[1];
+
+  var année = docBudg.Exer;
+  return "https://dtc-innovation.github.io/plans-de-compte/".concat(année, "/").concat(norme, "/").concat(sousNorme, "/planDeCompte.xml");
+}
+
+function _actions (store) {
+  return {
+    onNewDocumentBudgetaireText: function onNewDocumentBudgetaireText(fileText) {
+      var stateDocBudgIndex = 0; // store.state.documentBudgetairesWithPlanDeCompte.length
+
+      var docBudgP = Promise.resolve().then(function () {
+        return new DOMParser().parseFromString(fileText, "text/xml");
+      }).then(xmlDocumentToDocumentBudgetaire);
+      docBudgP.then(function (docBudg) {
+        store.mutations.documentBudgetaires.add.setValue(stateDocBudgIndex, docBudg);
+
+        {
+          store.mutations.testedDocumentBudgetaireWithPlanDeCompte.set(docBudg);
+        }
+      });
+      store.mutations.documentBudgetaires.add.setPending(stateDocBudgIndex, docBudgP);
+      docBudgP.catch(function (err) {
+        return store.mutations.documentBudgetaires.add.setError(stateDocBudgIndex, err);
+      });
+      docBudgP.then(function (docBudg) {
+        var planDeCompteURL = makePlanDeCompteURL(docBudg);
+        var planDeCompteP = xml(planDeCompteURL).then(fromXMLDocument).then(function (planDeCompte) {
+          return store.mutations.documentBudgetaires.planDeCompte.setValue(docBudg, planDeCompte);
+        });
+        store.mutations.documentBudgetaires.planDeCompte.setPending(docBudg, planDeCompteP);
+        planDeCompteP.catch(function (err) {
+          store.mutations.documentBudgetaires.planDeCompte.setError(docBudg, Object.assign(err, {
+            url: planDeCompteURL
+          }));
+        });
+      });
+    },
+    importAggregationDescription: store.mutations.aggregationDescription.set
   };
 }
 
@@ -8047,7 +8204,7 @@ var grammar = createCommonjsModule(function (module) {
         "postprocess": id
       }, {
         "name": "SUBSET",
-        "symbols": ["NATURE"],
+        "symbols": ["COMPTE"],
         "postprocess": id
       }, {
         "name": "SUBSET",
@@ -8088,6 +8245,16 @@ var grammar = createCommonjsModule(function (module) {
           return ts.join('');
         }
       }, {
+        "name": "CHAPITRE$string$1",
+        "symbols": [{
+          "literal": "C"
+        }, {
+          "literal": "h"
+        }],
+        "postprocess": function joiner(d) {
+          return d.join('');
+        }
+      }, {
         "name": "CHAPITRE$ebnf$1",
         "symbols": [/[0-9]/]
       }, {
@@ -8098,26 +8265,24 @@ var grammar = createCommonjsModule(function (module) {
         }
       }, {
         "name": "CHAPITRE",
-        "symbols": [{
-          "literal": "C"
-        }, "CHAPITRE$ebnf$1"],
+        "symbols": ["CHAPITRE$string$1", "CHAPITRE$ebnf$1"],
         "postprocess": function postprocess(ts) {
           return ts[0] + ts[1].join('');
         }
       }, {
-        "name": "NATURE$ebnf$1",
+        "name": "COMPTE$ebnf$1",
         "symbols": [/[0-9]/]
       }, {
-        "name": "NATURE$ebnf$1",
-        "symbols": ["NATURE$ebnf$1", /[0-9]/],
+        "name": "COMPTE$ebnf$1",
+        "symbols": ["COMPTE$ebnf$1", /[0-9]/],
         "postprocess": function arrpush(d) {
           return d[0].concat([d[1]]);
         }
       }, {
-        "name": "NATURE",
+        "name": "COMPTE",
         "symbols": [{
-          "literal": "N"
-        }, "NATURE$ebnf$1"],
+          "literal": "C"
+        }, "COMPTE$ebnf$1"],
         "postprocess": function postprocess(ts) {
           return ts[0] + ts[1].join('');
         }
@@ -8190,7 +8355,7 @@ var grammar = createCommonjsModule(function (module) {
   })();
 });
 
-function matchesSimple(r, year, subset) {
+function matchesSimple(r, planDeCompte, subset) {
   switch (subset) {
     case 'R':
     case 'D':
@@ -8198,43 +8363,43 @@ function matchesSimple(r, year, subset) {
 
     case 'F':
     case 'I':
-      return r['FI'] === subset;
+      return planDeCompte.ligneBudgetFI(r) === subset;
 
     case 'RF':
     case 'RI':
     case 'DF':
     case 'DI':
-      return r['CodRD'] === subset[0] && r['FI'] === subset[1];
+      return r['CodRD'] === subset[0] && planDeCompte.ligneBudgetFI(r) === subset[1];
   }
 
-  if (subset.startsWith('N')) return subset.slice(1) === r['Nature'];
-  if (subset.startsWith('F')) return r['Fonction'].startsWith(subset.slice(1));
-  if (subset.startsWith('C')) return subset.slice(1) === r['Chapitre'];
-  if (subset.startsWith('Ann')) return subset.slice('Ann'.length) === String(year);
+  if (subset.startsWith('Ch')) return planDeCompte.ligneBudgetIsInChapitre(r, subset.slice('Ch'.length));
+  if (subset.startsWith('C')) return planDeCompte.ligneBudgetIsInCompte(r, subset.slice('C'.length));
+  if (subset.startsWith('F')) return planDeCompte.ligneBudgetIsInFonction(r, subset.slice('F'.length));
+  if (subset.startsWith('Ann')) return subset.slice('Ann'.length) === String(planDeCompte.Exer);
   console.warn('matchesSubset - Unhandled case', subset);
 }
 
-function matchesComplex(r, year, combo) {
-  if (typeof combo === 'string') return matchesSimple(r, year, combo); // assert(Array.isArray(combo))
+function matchesComplex(r, planDeCompte, combo) {
+  if (typeof combo === 'string') return matchesSimple(r, planDeCompte, combo); // assert(Array.isArray(combo))
 
   var _combo = _slicedToArray(combo, 3),
       left = _combo[0],
       middle = _combo[1],
       right = _combo[2];
 
-  if (left === '(' && right === ')') return matchesComplex(r, year, middle);else {
+  if (left === '(' && right === ')') return matchesComplex(r, planDeCompte, middle);else {
     var operator = middle;
 
     switch (operator) {
       case '+':
       case '∪':
-        return matchesComplex(r, year, left) || matchesComplex(r, year, right);
+        return matchesComplex(r, planDeCompte, left) || matchesComplex(r, planDeCompte, right);
 
       case '∩':
-        return matchesComplex(r, year, left) && matchesComplex(r, year, right);
+        return matchesComplex(r, planDeCompte, left) && matchesComplex(r, planDeCompte, right);
 
       case '-':
-        return matchesComplex(r, year, left) && !matchesComplex(r, year, right);
+        return matchesComplex(r, planDeCompte, left) && !matchesComplex(r, planDeCompte, right);
 
       default:
         console.warn('matchesSubset - Unhandled case', operator, combo);
@@ -8250,21 +8415,21 @@ var returnFalseFunction = Object.freeze(function () {
     returns a function that can be used in the context of a documentBudgetaire.rows.filter()
 */
 
-var makeLigneBudgetFilterFromFormula = src(function makeLigneBudgetFilterFromFormula(formula, year) {
+var makeLigneBudgetFilterFromFormula = src(function makeLigneBudgetFilterFromFormula(formula, planDeCompte) {
   var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
   try {
     parser.feed(formula);
     if (parser.results[0] === undefined) return returnFalseFunction;else return src(function (budgetRow) {
-      return matchesComplex(budgetRow, year, parser.results[0]);
+      return matchesComplex(budgetRow, planDeCompte, parser.results[0]);
     });
   } catch (e) {
     return returnFalseFunction;
   }
 });
 
-var makeAggregateFunction = src(function makeAggregateFunction(aggregationDescription) {
-  var aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode = src(function (aggregationDescriptionNode, documentBudgetaire) {
+var makeAggregateFunction = src(function makeAggregateFunction(aggregationDescription, planDeCompte) {
+  var aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode = src(function (aggregationDescriptionNode, documentBudgetaire, planDeCompte) {
     var id = aggregationDescriptionNode.id,
         name = aggregationDescriptionNode.name,
         children = aggregationDescriptionNode.children,
@@ -8274,17 +8439,17 @@ var makeAggregateFunction = src(function makeAggregateFunction(aggregationDescri
       id: id,
       name: name,
       children: children.map(function (n) {
-        return aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(n, documentBudgetaire);
+        return aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(n, documentBudgetaire, planDeCompte);
       })
     }) : // leaf, has .formula
     AggregatedDocumentBudgetaireLeaf({
       id: id,
       name: name,
-      elements: documentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula, documentBudgetaire.Exer))
+      elements: documentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula, planDeCompte))
     });
   });
   return src(function aggregate(docBudg) {
-    return aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(aggregationDescription, docBudg);
+    return aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(aggregationDescription, docBudg, planDeCompte);
   });
 });
 
@@ -8398,25 +8563,35 @@ function (_Component) {
     key: "render",
     value: function render(_ref3) {
       var aggregationDescription = _ref3.aggregationDescription,
-          documentBudgetaires = _ref3.documentBudgetaires;
-      var aggregate = makeAggregateFunction(aggregationDescription);
-      var aggregatedDocumentBudgetaires = documentBudgetaires.map(aggregate);
-      var documentBudgetaire = documentBudgetaires[0];
+          documentBudgetairesWithPlanDeCompte = _ref3.documentBudgetairesWithPlanDeCompte;
+
+      if (documentBudgetairesWithPlanDeCompte.length === 0) {
+        return undefined;
+      }
+
+      var aggregatedDocumentBudgetaires = documentBudgetairesWithPlanDeCompte.map(function (_ref4) {
+        var documentBudgetaire = _ref4.documentBudgetaire,
+            planDeCompte = _ref4.planDeCompte;
+        return makeAggregateFunction(aggregationDescription, planDeCompte)(documentBudgetaire);
+      });
+      var _documentBudgetairesW = documentBudgetairesWithPlanDeCompte[0],
+          documentBudgetaire = _documentBudgetairesW.documentBudgetaire,
+          planDeCompte = _documentBudgetairesW.planDeCompte;
       var aggregatedDocumentBudgetaire = aggregatedDocumentBudgetaires[0];
       var unusedRows = documentBudgetaire ? makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) : [];
       var rowsUsedMoreThanOnce = documentBudgetaire ? makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) : [];
       return h("section", null, h("h1", null, "Analyse"), h("p", null, "Il y a ", documentBudgetaire && documentBudgetaire.rows.size, " lignes dans le document budgetaire"), h("h2", null, "Lignes non-utilis\xE9es (", unusedRows.length, ")"), h("table", null, unusedRows.map(function (row) {
-        return h("tr", null, h("td", null, row["CodRD"], row["FI"]), h("td", null, "F", row["Fonction"]), h("td", null, "C", row["Chapitre"]), h("td", null, "N", row["Nature"]), h("td", {
+        return h("tr", null, h("td", null, row["CodRD"], planDeCompte.ligneBudgetFI(row)), h("td", null, "F", row["Fonction"]), h("td", null, "C", row["Chapitre"]), h("td", null, "N", row["Nature"]), h("td", {
           class: "money-amount"
         }, row["MtReal"].toLocaleString('fr-FR', {
           style: 'currency',
           currency: 'EUR'
         })));
-      })), h("h2", null, "Lignes utilis\xE9es plus qu'une fois (", rowsUsedMoreThanOnce.length, ")"), h("table", null, rowsUsedMoreThanOnce.map(function (_ref4) {
-        var row = _ref4.row,
-            aggregationSets = _ref4.aggregationSets;
-        return h("tr", null, h("td", null, row["CodRD"], row["FI"], " F", row["Fonction"], " C", row["Chapitre"], " N", row["Nature"]), h("td", null, aggregationSets.map(function (_ref5) {
-          var name = _ref5.name;
+      })), h("h2", null, "Lignes utilis\xE9es plus qu'une fois (", rowsUsedMoreThanOnce.length, ")"), h("table", null, rowsUsedMoreThanOnce.map(function (_ref5) {
+        var row = _ref5.row,
+            aggregationSets = _ref5.aggregationSets;
+        return h("tr", null, h("td", null, row["CodRD"], planDeCompte.ligneBudgetFI(row), " F", row["Fonction"], " C", row["Chapitre"], " N", row["Nature"]), h("td", null, aggregationSets.map(function (_ref6) {
+          var name = _ref6.name;
           return name;
         }).join(' & ')));
       })));
@@ -8513,6 +8688,7 @@ function (_Component) {
 function AggregationDescriptionLeafEditor(_ref2) {
   var aggregationDescriptionLeaf = _ref2.aggregationDescriptionLeaf,
       aggregatedDocumentBudgetaireCorrespondingNode = _ref2.aggregatedDocumentBudgetaireCorrespondingNode,
+      planDeCompte = _ref2.planDeCompte,
       onFormulaChange = _ref2.onFormulaChange;
   var id = aggregationDescriptionLeaf.id,
       name = aggregationDescriptionLeaf.name,
@@ -8541,7 +8717,7 @@ function AggregationDescriptionLeafEditor(_ref2) {
   }))), h("tbody", null, aggregatedDocumentBudgetaireCorrespondingNode.elements.toArray().sort(function (r1, r2) {
     return r2['MtReal'] - r1['MtReal'];
   }).map(function (r) {
-    return h("tr", null, h("td", null, r['CodRD'] + r['FI']), h("td", null, r['Fonction']), h("td", null, r['Nature']), h("td", {
+    return h("tr", null, h("td", null, r['CodRD'] + planDeCompte.ligneBudgetFI(r)), h("td", null, r['Fonction']), h("td", null, r['Nature']), h("td", {
       class: "money-amount"
     }, r['MtReal'].toLocaleString('fr-FR', {
       style: 'currency',
@@ -8682,6 +8858,7 @@ function (_Component) {
 function MillerColumns(_ref3) {
   var aggregationDescription = _ref3.aggregationDescription,
       aggregatedDocumentBudgetaire = _ref3.aggregatedDocumentBudgetaire,
+      planDeCompte = _ref3.planDeCompte,
       selectedList = _ref3.selectedList,
       _ref3$aggregationDesc = _ref3.aggregationDescriptionMutations,
       _addChild = _ref3$aggregationDesc.addChild,
@@ -8735,6 +8912,7 @@ function MillerColumns(_ref3) {
     }) : h(AggregationDescriptionLeafEditor, {
       aggregationDescriptionLeaf: node,
       aggregatedDocumentBudgetaireCorrespondingNode: aggregatedDocumentBudgetaire.getIn(keyPath),
+      planDeCompte: planDeCompte,
       onFormulaChange: function onFormulaChange(formula) {
         return changeFormula(node, formula);
       }
@@ -8785,21 +8963,23 @@ function AggregationDescriptionEditor (props) {
 function Aggregation (_ref) {
   var aggregationDescription = _ref.aggregationDescription,
       aggregatedDocumentBudgetaire = _ref.aggregatedDocumentBudgetaire,
-      documentBudgetaire = _ref.documentBudgetaire,
+      documentBudgetairesWithPlanDeCompte = _ref.documentBudgetairesWithPlanDeCompte,
       selectedList = _ref.selectedList,
       aggregationDescriptionMutations = _ref.aggregationDescriptionMutations,
       triggerAggregationDescriptionDownload = _ref.triggerAggregationDescriptionDownload,
       importAggregationDescription = _ref.importAggregationDescription;
+  var planDeCompte = documentBudgetairesWithPlanDeCompte[0] && documentBudgetairesWithPlanDeCompte[0].planDeCompte;
   return h("div", null, h(AggregationDescriptionEditor, {
     aggregationDescription: aggregationDescription,
     aggregatedDocumentBudgetaire: aggregatedDocumentBudgetaire,
     selectedList: selectedList,
     aggregationDescriptionMutations: aggregationDescriptionMutations,
     triggerAggregationDescriptionDownload: triggerAggregationDescriptionDownload,
-    importAggregationDescription: importAggregationDescription
+    importAggregationDescription: importAggregationDescription,
+    planDeCompte: planDeCompte
   }), h(AggregationAnalysis, {
     aggregationDescription: aggregationDescription,
-    documentBudgetaires: documentBudgetaire ? [documentBudgetaire] : []
+    documentBudgetairesWithPlanDeCompte: documentBudgetairesWithPlanDeCompte
   }));
 }
 
@@ -8829,8 +9009,13 @@ function DocumentBudgetaireInput(_ref) {
 
 function ContextHeader (_ref2) {
   var documentBudgetaire = _ref2.documentBudgetaire,
-      onNewDocumentBudgetaireText = _ref2.onNewDocumentBudgetaireText;
-  return h("header", null, h("h1", null, "Agr\xE9gation de Document Budg\xE9taire"), h("section", null, h("h2", null, "Documents Budg\xE9taires"), h("div", null, "Document budg\xE9taire charg\xE9 :", documentBudgetaire ? " ".concat(documentBudgetaire["LibelleColl"], " - ").concat(documentBudgetaire["Nomenclature"], " - ").concat(documentBudgetaire["Exer"]) : ' (aucun)'), h(DocumentBudgetaireInput, {
+      onNewDocumentBudgetaireText = _ref2.onNewDocumentBudgetaireText,
+      errors = _ref2.errors;
+  return h("header", null, h("h1", null, "Agr\xE9gation de Document Budg\xE9taire"), h("section", null, h("h2", null, "Documents Budg\xE9taires"), h("div", null, "Document budg\xE9taire charg\xE9 :", documentBudgetaire ? " ".concat(documentBudgetaire["LibelleColl"], " - ").concat(documentBudgetaire["Nomenclature"], " - ").concat(documentBudgetaire["Exer"]) : ' (aucun)'), errors && errors.map(function (err) {
+    return h("strong", {
+      class: "error"
+    }, "Erreur : ", err);
+  }), h(DocumentBudgetaireInput, {
     onNewDocumentBudgetaireText: onNewDocumentBudgetaireText
   })));
 }
@@ -8839,71 +9024,38 @@ var ASYNC_STATUS = Symbol('async status property name');
 var STATUS_PENDING = Symbol('async status pending');
 var STATUS_ERROR = Symbol('async status error');
 var STATUS_VALUE = Symbol('async status value');
-function makeAsyncMutationFunctions(statePropName) {
-  return {
-    setPending: function setPending(state, pendingValue) {
-      pendingValue[ASYNC_STATUS] = STATUS_PENDING;
-      state[statePropName] = pendingValue;
-    },
-    setError: function setError(state, error) {
-      error[ASYNC_STATUS] = STATUS_ERROR;
-      state[statePropName] = error;
-    },
-    setValue: function setValue(state, value) {
-      value[ASYNC_STATUS] = STATUS_VALUE;
-      state[statePropName] = value;
-    }
-  };
-}
-
-function makePlanDeCompteURL(docBudg) {
-  var _docBudg$querySelecto = docBudg.querySelector('EnTeteBudget Nomenclature').getAttribute('V').split('-'),
-      _docBudg$querySelecto2 = _slicedToArray(_docBudg$querySelecto, 2),
-      norme = _docBudg$querySelecto2[0],
-      sousNorme = _docBudg$querySelecto2[1];
-
-  var année = docBudg.querySelector('BlocBudget Exer').getAttribute('V');
-  return "https://dtc-innovation.github.io/plans-de-compte/".concat(année, "/").concat(norme, "/").concat(sousNorme, "/planDeCompte.xml");
-}
-
-function _actions (store) {
-  return {
-    onNewDocumentBudgetaireText: function onNewDocumentBudgetaireText(fileText) {
-      Promise.resolve().then(function () {
-        return new DOMParser().parseFromString(fileText, "text/xml");
-      }).then(function (docBudg) {
-        xml(makePlanDeCompteURL(docBudg)).then(function (planDeCompte) {
-          return makeNatureToChapitreFI([planDeCompte]);
-        }).then(function (natureToChapitreFI) {
-          return xmlDocumentToDocumentBudgetaire(docBudg, natureToChapitreFI);
-        }).then(store.mutations.testedDocumentBudgetaire.setValue).catch(store.mutations.testedDocumentBudgetaire.setError);
-      });
-    },
-    importAggregationDescription: store.mutations.aggregationDescription.set
-  };
-}
 
 function mapStateToProps(_ref) {
   var aggregationDescription = _ref.aggregationDescription,
-      testedDocumentBudgetaire = _ref.testedDocumentBudgetaire,
+      _ref$testedDocumentBu = _ref.testedDocumentBudgetaireWithPlanDeCompte,
+      testedDocumentBudgetaireWithPlanDeCompte = _ref$testedDocumentBu === void 0 ? {} : _ref$testedDocumentBu,
+      documentBudgetairesWithPlanDeCompte = _ref.documentBudgetairesWithPlanDeCompte,
       millerColumnSelection = _ref.millerColumnSelection;
+  var documentBudgetaire = testedDocumentBudgetaireWithPlanDeCompte.documentBudgetaire,
+      planDeCompte = testedDocumentBudgetaireWithPlanDeCompte.planDeCompte;
   return {
     aggregationDescription: aggregationDescription,
     selectedList: millerColumnSelection,
-    aggregatedDocumentBudgetaire: aggregationDescription && testedDocumentBudgetaire && testedDocumentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? makeAggregateFunction(aggregationDescription)(testedDocumentBudgetaire) : undefined,
-    documentBudgetaire: testedDocumentBudgetaire && testedDocumentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? testedDocumentBudgetaire : undefined
+    aggregatedDocumentBudgetaire: aggregationDescription && documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE && planDeCompte && planDeCompte[ASYNC_STATUS] === STATUS_VALUE ? makeAggregateFunction(aggregationDescription, planDeCompte)(documentBudgetaire) : undefined,
+    documentBudgetairesWithPlanDeCompte: documentBudgetairesWithPlanDeCompte.filter(function (_ref2) {
+      var documentBudgetaire = _ref2.documentBudgetaire,
+          planDeCompte = _ref2.planDeCompte;
+      return documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE && planDeCompte && planDeCompte[ASYNC_STATUS] === STATUS_VALUE;
+    })
   };
 }
 
-function Main (_ref2) {
-  var store = _ref2.store;
+function Main (_ref3) {
+  var store = _ref3.store;
 
   var actions = _actions(store);
 
   var _store$state = store.state,
-      testedDocumentBudgetaire = _store$state.testedDocumentBudgetaire,
+      _store$state$testedDo = _store$state.testedDocumentBudgetaireWithPlanDeCompte,
+      testedDocumentBudgetaireWithPlanDeCompte = _store$state$testedDo === void 0 ? {} : _store$state$testedDo,
       aggregationDescription = _store$state.aggregationDescription;
-  var docBudg = testedDocumentBudgetaire && testedDocumentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? testedDocumentBudgetaire : undefined;
+  var documentBudgetaire = testedDocumentBudgetaireWithPlanDeCompte.documentBudgetaire;
+  var docBudg = documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? documentBudgetaire : undefined;
   var props = Object.assign({}, store.mutations, {
     // disambiguation with props with the 'aggregationDescription'
     aggregationDescriptionMutations: store.mutations.aggregationDescription,
@@ -8927,9 +9079,20 @@ function Main (_ref2) {
       document.body.removeChild(a);
     }
   }, mapStateToProps(store.state), actions);
+  var errors = store.state.documentBudgetairesWithPlanDeCompte.filter(function (_ref4) {
+    var planDeCompte = _ref4.planDeCompte;
+    return planDeCompte && planDeCompte[ASYNC_STATUS] === STATUS_ERROR;
+  }).map(function (_ref5) {
+    var _ref5$documentBudgeta = _ref5.documentBudgetaire,
+        Nomenclature = _ref5$documentBudgeta.Nomenclature,
+        Exer = _ref5$documentBudgeta.Exer,
+        planDeCompte = _ref5.planDeCompte;
+    return "Le plan de compte pour la nomenclature ".concat(Nomenclature, ", ann\xE9e ").concat(Exer, " n'a pas pu \xEAtre r\xE9cup\xE9r\xE9 (").concat(planDeCompte.url, ", \"").concat(planDeCompte.message, "\")");
+  });
   return h("main", null, h(ContextHeader, {
     documentBudgetaire: docBudg,
-    onNewDocumentBudgetaireText: actions.onNewDocumentBudgetaireText
+    onNewDocumentBudgetaireText: actions.onNewDocumentBudgetaireText,
+    errors: errors
   }), h(Aggregation, props));
 }
 
@@ -9032,7 +9195,8 @@ var store = new Store({
   state: {
     millerColumnSelection: new List(),
     aggregationDescription: undefined,
-    testedDocumentBudgetaire: undefined
+    testedDocumentBudgetaireWithPlanDeCompte: undefined,
+    documentBudgetairesWithPlanDeCompte: []
   },
   mutations: {
     aggregationDescription: {
@@ -9115,7 +9279,62 @@ var store = new Store({
         fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription);
       }
     },
-    testedDocumentBudgetaire: makeAsyncMutationFunctions('testedDocumentBudgetaire')
+    documentBudgetaires: {
+      add: {
+        setPending: function setPending(state, i, pendingValue) {
+          pendingValue[ASYNC_STATUS] = STATUS_PENDING;
+          state.documentBudgetairesWithPlanDeCompte[i] = {
+            documentBudgetaire: pendingValue
+          };
+        },
+        setError: function setError(state, i, error) {
+          error[ASYNC_STATUS] = STATUS_ERROR;
+          state.documentBudgetairesWithPlanDeCompte[i] = {
+            documentBudgetaire: error
+          };
+        },
+        setValue: function setValue(state, i, value) {
+          value[ASYNC_STATUS] = STATUS_VALUE;
+          state.documentBudgetairesWithPlanDeCompte[i] = {
+            documentBudgetaire: value
+          };
+        }
+      },
+      planDeCompte: {
+        setPending: function setPending(state, docBudg, pendingValue) {
+          pendingValue[ASYNC_STATUS] = STATUS_PENDING;
+          var dbwpdc = state.documentBudgetairesWithPlanDeCompte.find(function (_ref2) {
+            var documentBudgetaire = _ref2.documentBudgetaire;
+            return documentBudgetaire === docBudg;
+          });
+          dbwpdc.planDeCompte = pendingValue;
+        },
+        setError: function setError(state, docBudg, error) {
+          error[ASYNC_STATUS] = STATUS_ERROR;
+          var dbwpdc = state.documentBudgetairesWithPlanDeCompte.find(function (_ref3) {
+            var documentBudgetaire = _ref3.documentBudgetaire;
+            return documentBudgetaire === docBudg;
+          });
+          dbwpdc.planDeCompte = error;
+        },
+        setValue: function setValue(state, docBudg, value) {
+          value[ASYNC_STATUS] = STATUS_VALUE;
+          var dbwpdc = state.documentBudgetairesWithPlanDeCompte.find(function (_ref4) {
+            var documentBudgetaire = _ref4.documentBudgetaire;
+            return documentBudgetaire === docBudg;
+          });
+          dbwpdc.planDeCompte = value;
+        }
+      }
+    },
+    testedDocumentBudgetaireWithPlanDeCompte: {
+      set: function set(state, docBudg) {
+        state.testedDocumentBudgetaireWithPlanDeCompte = state.documentBudgetairesWithPlanDeCompte.find(function (_ref5) {
+          var documentBudgetaire = _ref5.documentBudgetaire;
+          return documentBudgetaire === docBudg;
+        });
+      }
+    }
   }
 });
 
@@ -9290,6 +9509,9 @@ function MontreuilNomenclatureToAggregationDescription(montreuilNomenclature, do
   });
 }
 
+var actions = _actions(store); // initialize store
+
+
 store.mutations.aggregationDescription.set(new AggregationDescription({
   id: 'racine',
   name: 'racine',
@@ -9353,17 +9575,7 @@ if (isMontreuil) {
   });
 } else {
   // Download and transform some Compte Administratif
-  Promise.all([xml('./data/CA/CA2017BPAL.xml'), xml('./data/plansDeCompte/plan-de-compte-M52-M52-2017.xml').then(function (pdC) {
-    return makeNatureToChapitreFI([pdC]);
-  })]).then(function (_ref5) {
-    var _ref6 = _slicedToArray(_ref5, 2),
-        doc = _ref6[0],
-        natureToChapitreFI = _ref6[1];
-
-    return xmlDocumentToDocumentBudgetaire(doc, natureToChapitreFI);
-  }).then(function (docBudg) {
-    store.mutations.testedDocumentBudgetaire.setValue(docBudg);
-  }).catch(console.error); // load stored aggregation description
+  text('./data/CA/CA2017BPAL.xml').then(actions.onNewDocumentBudgetaireText).catch(console.error); // load stored aggregation description
 
   var storedAggregationDescription = getStoredState();
 

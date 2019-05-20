@@ -106,7 +106,7 @@ class MillerColumn extends Component {
 }
 
 // https://en.wikipedia.org/wiki/Miller_columns
-function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild, selectNode, changeFormula}}){
+function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, planDeCompte, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild, selectNode, changeFormula}}){
 
     const firstSelectedId = selectedList.first();
 
@@ -142,6 +142,7 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, se
                         html`<${AggregationDescriptionLeafEditor} 
                             aggregationDescriptionLeaf=${node}
                             aggregatedDocumentBudgetaireCorrespondingNode=${aggregatedDocumentBudgetaire.getIn(keyPath)}
+                            planDeCompte=${planDeCompte}
                             onFormulaChange=${formula => changeFormula(node, formula)}
                         />`
                 }).toArray()

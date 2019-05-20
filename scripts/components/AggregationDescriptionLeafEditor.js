@@ -62,7 +62,7 @@ class FormulaEditor extends Component {
 
 
 export default function AggregationDescriptionLeafEditor({
-    aggregationDescriptionLeaf, aggregatedDocumentBudgetaireCorrespondingNode, onFormulaChange
+    aggregationDescriptionLeaf, aggregatedDocumentBudgetaireCorrespondingNode, planDeCompte, onFormulaChange
 }){
     const {id, name, formula} = aggregationDescriptionLeaf
 
@@ -102,7 +102,7 @@ export default function AggregationDescriptionLeafEditor({
                                 .toArray().sort((r1, r2) => r2['MtReal'] - r1['MtReal']).map(r => {
                                 return html`
                                     <tr>
-                                        <td>${r['CodRD']+r['FI']}</td>
+                                        <td>${r['CodRD']+planDeCompte.ligneBudgetFI(r)}</td>
                                         <td>${r['Fonction']}</td>
                                         <td>${r['Nature']}</td>
                                         <td class="money-amount">${r['MtReal'].toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}</td>
