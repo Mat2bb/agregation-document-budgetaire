@@ -3,12 +3,11 @@ import memoize from 'fast-memoize'
 import { sum } from 'd3-array';
 import { xml } from 'd3-fetch';
 
-import makeNatureToChapitreFI from '../finance/makeNatureToChapitreFI.js'
 import xmlDocumentToDocumentBudgetaire from '../finance/xmlDocumentToDocumentBudgetaire.js'
 import makeLigneBudgetFilterFromFormula from '../DocumentBudgetaireQueryLanguage/makeLigneBudgetFilterFromFormula.js'
+import {fromXMLDocument} from '../finance/planDeCompte.js'
 
-
-function makeTable(rows, year) {
+function makeTable(rows, year, planDeCompte) {
     return Bouture.section([
         Bouture.h1('CA Gironde ', year),
         Bouture.h2(rows.size, ' elements | ', sum(rows.map(r => r['MtReal'])).toFixed(2) + '€'),
@@ -18,7 +17,7 @@ function makeTable(rows, year) {
                 rows.map(r => {
                     return Bouture.tr([
                         Bouture.td(r['CodRD']),
-                        Bouture.td(r['FI']),
+                        Bouture.td(planDeCompte.ligneBudgetFI(r)),
                         Bouture.td(r['Fonction']),
                         Bouture.td(r['Nature']),
                         Bouture.td(r['MtReal'].toFixed(2) + '€')
@@ -29,29 +28,27 @@ function makeTable(rows, year) {
     ])
 }
 
+const planDeCompteP = xml('./data/plansDeCompte/plan-de-compte-M52-M52-2017.xml')
+.then(fromXMLDocument)
 
-const docBudgP = Promise.all([
-    xml('./data/CA/CA2017BPAL.xml'),
-    xml('./data/plansDeCompte/plan-de-compte-M52-M52-2017.xml')
-        .then(pdC => makeNatureToChapitreFI([pdC]))
-])
-    .then(([doc, natureToChapitreFI]) => xmlDocumentToDocumentBudgetaire(doc, natureToChapitreFI))
-    .then(docBudg => {
-        console.log('docBudg', docBudg.toJS())
-        return docBudg
-    })
-    .catch(console.error)
+const docBudgP = xml('./data/CA/CA2017BPAL.xml')
+.then(xmlDocumentToDocumentBudgetaire)
+.catch(console.error)
+
+docBudgP
+.then(docBudg => console.log('docBudg', docBudg.toJS()))
 
 document.addEventListener('DOMContentLoaded', e => {
     const input = document.body.querySelector('input');
 
-    docBudgP.then(docBudg => {
+    Promise.all([ docBudgP, planDeCompteP ])
+    .then(([docBudg, planDeCompte]) => {
 
-        function makeOutputFromFormula(formula, year) {
-            const filter = makeLigneBudgetFilterFromFormula(formula, year)
+        function makeOutputFromFormula(formula, planDeCompte) {
+            const filter = makeLigneBudgetFilterFromFormula(formula, planDeCompte)
 
             return Bouture.output(
-                [ makeTable(docBudg['rows'].filter(filter), docBudg['Exer']) ]
+                [ makeTable(docBudg['rows'].filter(filter), docBudg['Exer'], planDeCompte) ]
             ).getElement()
         }
 
@@ -63,7 +60,7 @@ document.addEventListener('DOMContentLoaded', e => {
             const formula = e.target.value.trim();
 
             document.body.querySelector('output').replaceWith(
-                memzMakeOutputFromFormula(formula, docBudg.Exer)
+                memzMakeOutputFromFormula(formula, planDeCompte)
             )
 
             // save in hash if formula stayed unchanged for 3secs
@@ -89,7 +86,7 @@ document.addEventListener('DOMContentLoaded', e => {
     input.focus()
 
     // initialize input vith hash value
-    docBudgP.then(hashUpdate)
+    Promise.all([ docBudgP, planDeCompteP ]).then(hashUpdate)
 
     window.addEventListener('hashchange', hashUpdate)
 
@@ -121,24 +118,28 @@ document.addEventListener('DOMContentLoaded', e => {
             description: 'toutes les dépenses de fonctionnement des fonctions 4 et 5'
         },
         {
-            formula: 'DF∩(N64111 ∪ N6451)',
+            formula: 'DF∩(C64111 ∪ C6451)',
             description: 'toutes les dépenses de fonctionnement des natures 64111 et 6451 (salaire + URSSAF)'
         },
         {
-            formula: 'DF∩(N64111 ∪ N6451)∩F52',
+            formula: 'DF∩(C64111 ∪ C6451)∩F52',
             description: 'toutes les dépenses de fonctionnement salaires+URSSAF lié à la fonction 52 (Personnes handicapées)'
         },
         {
-            formula: 'DF∩((F50∩(N64121 ∪ N64126)) ∪ (F51 - F51∩N6526))',
+            formula: 'DF∩((F50∩(C64121 ∪ C64126)) ∪ (F51 - C6526))',
             description: 'Gironde - social - enfance'
         },
         {
-            formula: 'RI∩C16',
+            formula: 'RI∩Ch16',
             description: `toutes les recettes d'investissement du chapitre 16 (emprunts)`
         },
         {
-            formula: 'RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)',
+            formula: 'RF∩(C7478141 ∪ C7478142 ∪ C74788∩F53∩Ann2016)',
             description: `Gironde - recettes de fonctionnement - Conférence des financeurs`
+        },
+        {
+            formula: 'DF∩C60 - (F4∪F5∪F8∪F621)',
+            description: `Gironde - dépense de fonctionnement - Achats et fournitures`
         }
     ];
 

@@ -52,12 +52,17 @@ export default class AggregationAnalysis extends Component{
         this.updateDebounced.cancel();
     }
 
-    render({aggregationDescription, documentBudgetaires}){
+    render({aggregationDescription, documentBudgetairesWithPlanDeCompte}){
 
-        const aggregate = makeAggregateFunction(aggregationDescription)
-        const aggregatedDocumentBudgetaires = documentBudgetaires.map(aggregate)
+        if(documentBudgetairesWithPlanDeCompte.length === 0){
+            return undefined;
+        }
+
+        const aggregatedDocumentBudgetaires = documentBudgetairesWithPlanDeCompte.map(
+            ({documentBudgetaire, planDeCompte}) => makeAggregateFunction(aggregationDescription, planDeCompte)(documentBudgetaire)
+        )
     
-        const documentBudgetaire = documentBudgetaires[0];
+        const {documentBudgetaire, planDeCompte} = documentBudgetairesWithPlanDeCompte[0];
         const aggregatedDocumentBudgetaire = aggregatedDocumentBudgetaires[0];
     
         const unusedRows = documentBudgetaire ?
@@ -78,7 +83,7 @@ export default class AggregationAnalysis extends Component{
                         unusedRows.map(row => {
                             return html`
                                 <tr>
-                                    <td>${row["CodRD"]}${row["FI"]}</td>
+                                    <td>${row["CodRD"]}${planDeCompte.ligneBudgetFI(row)}</td>
                                     <td>F${row["Fonction"]}</td>
                                     <td>C${row["Chapitre"]}</td>
                                     <td>N${row["Nature"]}</td>
@@ -95,7 +100,7 @@ export default class AggregationAnalysis extends Component{
                         rowsUsedMoreThanOnce.map(({row, aggregationSets}) => {
                             return html`
                                 <tr>
-                                    <td>${row["CodRD"]}${row["FI"]} F${row["Fonction"]} C${row["Chapitre"]} N${row["Nature"]}</td>
+                                    <td>${row["CodRD"]}${planDeCompte.ligneBudgetFI(row)} F${row["Fonction"]} C${row["Chapitre"]} N${row["Nature"]}</td>
                                     <td>${
                                         aggregationSets.map(({name}) => name).join(' & ')
                                     }</td>

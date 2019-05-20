@@ -4,7 +4,7 @@ import {sum} from 'd3-array';
 
 import {makeLigneBudgetId, LigneBudgetRecord,  DocumentBudgetaire} from './DocBudgDataStructures';
 
-export default function(doc, natureToChapitreFI){
+export default function xmlDocumentToDocumentBudgetaire(doc){
     const BlocBudget = doc.getElementsByTagName('BlocBudget')[0];
 
     const exer = Number(BlocBudget.getElementsByTagName('Exer')[0].getAttribute('V'))
@@ -31,11 +31,6 @@ export default function(doc, natureToChapitreFI){
         })
 
         ret['MtReal'] = Number(ret['MtReal']);
-        
-        Object.assign(
-            ret, 
-            natureToChapitreFI(exer, ret['CodRD'], ret['Nature'])
-        )
 
         return ret;
     })

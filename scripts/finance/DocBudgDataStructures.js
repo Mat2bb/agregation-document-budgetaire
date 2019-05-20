@@ -3,17 +3,12 @@ import { Record } from 'immutable';
 /*
     Keys are the one used by the Actes Budgétaire project XML files (<LigneBudget> specifically) as described in
     http://odm-budgetaire.org/doc-schema/Class_Budget_xsd_Complex_Type_TBudget.html#TBudget_LigneBudget
-
-    'FI' has been added and refers to 'Fonctionnement/Investissement'
-    'Chapitre' was added as well
 */
 const LigneBudgetKeys = {
     'Nature': undefined,
     'Fonction': undefined,
     'CodRD': undefined,
-    'MtReal': undefined,
-    'Chapitre': undefined,
-    'FI': undefined
+    'MtReal': undefined
 }
 
 
