@@ -204,6 +204,7 @@ class MillerColumns extends Component {
                             )
                         }
 
+
                         return descriptionNode.children ? 
                             html`<${MillerColumn} 
                                 key=${id}
@@ -211,7 +212,20 @@ class MillerColumns extends Component {
                                 selectedChildId=${selectedList[i+1]}
                                 isLast=${i === selectedList.length - 2}
                                 addChild=${ addChildDeep }
-                                editChild=${ (previousChild, newChild) => editChildByLevel[i+1](previousChild, newChild, []) }
+                                editChild=${ (previousChild, newChild) => editChildByLevel[i](
+                                    descriptionNode,
+                                    produce(descriptionNode, draft => {
+                                        const {id: newId} = newChild;
+                                        const {id: previousId} = previousChild;
+                        
+                                        if(previousId !== newId){
+                                            delete draft.children[previousId];
+                                        }
+                        
+                                        draft.children[newId] = newChild
+                                    }),
+                                    []
+                                )}
                                 removeChild=${ removeChildDeep }}
                                 onNodeSelection=${id => setSelectionList(id ? [...selectedList.slice(0, i+1), id] : selectedList.slice(0, i+1))},
                             />` :
