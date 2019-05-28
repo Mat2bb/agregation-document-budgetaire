@@ -1,5 +1,5 @@
 import Bouture from 'https://cdn.jsdelivr.net/gh/DavidBruant/bouture@13cb6c683fa87e5feea574311dcda6353489bb3b/bouture.js'
-import memoize from 'fast-memoize'
+import memoize from '../memoize.js'
 import { sum } from 'd3-array';
 import { xml } from 'd3-fetch';
 
@@ -10,7 +10,7 @@ import {fromXMLDocument} from '../finance/planDeCompte.js'
 function makeTable(rows, year, planDeCompte) {
     return Bouture.section([
         Bouture.h1('CA Gironde ', year),
-        Bouture.h2(rows.size, ' elements | ', sum(rows.map(r => r['MtReal'])).toFixed(2) + '€'),
+        Bouture.h2(rows.length, ' elements | ', sum(rows.map(r => r['MtReal'])).toFixed(2) + '€'),
         Bouture.table([
             Bouture.thead.tr(['RD', 'FI', 'Fonction', 'Nature', 'Montant'].map(t => Bouture.th(t))),
             Bouture.tbody(
@@ -22,7 +22,7 @@ function makeTable(rows, year, planDeCompte) {
                         Bouture.td(r['Nature']),
                         Bouture.td(r['MtReal'].toFixed(2) + '€')
                     ])
-                }).toArray()
+                })
             )
         ])
     ])
@@ -36,7 +36,7 @@ const docBudgP = xml('./data/CA/CA2017BPAL.xml')
 .catch(console.error)
 
 docBudgP
-.then(docBudg => console.log('docBudg', docBudg.toJS()))
+.then(docBudg => console.log('docBudg', docBudg))
 
 document.addEventListener('DOMContentLoaded', e => {
     const input = document.body.querySelector('input');

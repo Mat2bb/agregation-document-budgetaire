@@ -1,5 +1,5 @@
 import nearley from 'nearley';
-import memoize from 'fast-memoize'
+import memoize from '../memoize.js'
 
 import grammar from './grammar.js'
 

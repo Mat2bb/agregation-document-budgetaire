@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import produce from 'immer'
 import {h, Component} from 'preact'
 
 import {AggregationDescriptionFromJSON} from '../finance/AggregationDataStructures.js'
@@ -8,7 +8,7 @@ class MillerColumn extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            adding: false,
+            adding: Object.values(props.aggregationDescription.children).length === 0,
             editingNode: undefined
         };
     }
@@ -18,7 +18,7 @@ class MillerColumn extends Component {
         return (
             html`<ol>
                 ${
-                    aggregationDescription.children.valueSeq().toArray().map(node => {
+                    Object.values(aggregationDescription.children).map(node => {
                         const isSelected = node.id === selectedChildId
 
                         return !editingNode || editingNode.id !== node.id ? 
@@ -29,7 +29,7 @@ class MillerColumn extends Component {
                                         isSelected ? 'selected' : undefined,
                                         node.children ? 'group' : 'formula'
                                     ].filter(x=>x).join(' ')} 
-                                    onClick=${() => onNodeSelection(node.id)}
+                                    onClick=${() => onNodeSelection(isSelected ? undefined : node.id)}
                                 >
                                     ${
                                         isSelected && isLast ? 
@@ -47,17 +47,24 @@ class MillerColumn extends Component {
                         adding || editingNode ?
                             html`<form onSubmit=${e => {
                                 e.preventDefault();
-                                const childData = {
+                                
+                                const newChild = e.target.querySelector('input[name="type"]:checked').value === 'group' ?
+                                {
                                     id: e.target.querySelector('input[name="id"]').value,
                                     name: e.target.querySelector('input[name="name"]').value,
-                                    type: e.target.querySelector('input[name="type"]:checked').value,
+                                    children: editingNode && editingNode.children || Object.create(null)
+                                } : 
+                                {
+                                    id: e.target.querySelector('input[name="id"]').value,
+                                    name: e.target.querySelector('input[name="name"]').value,
+                                    formula: editingNode && editingNode.formula || ''
                                 };
 
                                 if(editingNode){
-                                    editChild(editingNode, childData)
+                                    editChild(editingNode, newChild)
                                 }
                                 else{ // adding
-                                    addChild(childData)
+                                    addChild(newChild)
                                 }
 
                                 this.setState({
@@ -106,9 +113,35 @@ class MillerColumn extends Component {
 }
 
 // https://en.wikipedia.org/wiki/Miller_columns
-function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, planDeCompte, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild, selectNode, changeFormula}}){
+function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, planDeCompte, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild}, millerColumnSelection: {set: setSelectionList}}){
 
-    const firstSelectedId = selectedList.first();
+    const firstSelectedId = selectedList[0];
+
+    const editChildByLevel = selectedList.map((id, i) => {
+
+        return i === 0 ? editChild : (previousChild, newChild, newSelectedList) => {
+            let parent = aggregationDescription
+                        
+            for(const selected of selectedList.slice(0, i)){
+                parent = parent.children[selected]
+            }
+
+            editChildByLevel[i-1](
+                parent, 
+                produce(parent, draft => {
+                    const {id: newId} = newChild;
+                    const {id: previousId} = previousChild;
+    
+                    if(previousId !== newId){
+                        delete draft.children[previousId];
+                    }
+    
+                    draft.children[newId] = newChild
+                }),
+                [newChild.id, ...newSelectedList]
+            )
+        }
+    })
 
     return html`<section class="miller-columns">
         <h2>Création/édition</h2>
@@ -116,36 +149,64 @@ function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, pl
             <${MillerColumn} 
                 aggregationDescription=${aggregationDescription} 
                 selectedChildId=${firstSelectedId}
-                isLast=${selectedList.size === 1}
-                addChild=${childData => { addChild(aggregationDescription, childData) } }
-                editChild=${(node, childData) => editChild(aggregationDescription, node, childData)}
-                removeChild=${child => { removeChild(aggregationDescription, child) }}
-                onNodeSelection=${id => selectNode(id, 0)},
+                isLast=${selectedList.length === 1}
+                addChild=${addChild}
+                editChild=${(previousChild, newChild) => editChild(previousChild, newChild, [])}
+                removeChild=${removeChild}}
+                onNodeSelection=${id => setSelectionList(id ? [id] : [])},
             />
             ${
                 selectedList.map((id, i) => {
-                    const keyPath = selectedList.slice(0, i+1).map(id => List(['children', id])).flatten()
+                    let descriptionNode = aggregationDescription
+                    let aggregatedNode = aggregatedDocumentBudgetaire
+                    
+                    for(const selected of selectedList.slice(0, i+1)){
+                        descriptionNode = descriptionNode.children[selected]
+                        aggregatedNode = aggregatedNode && aggregatedNode.children.find(c => c.id === selected)
+                    }
 
-                    const node = aggregationDescription.getIn(keyPath)
+                    const addChildDeep = newChild => {
+                        editChildByLevel[i](
+                            descriptionNode, 
+                            produce(descriptionNode, draft => {
+                                draft.children[newChild.id] = newChild;
+                            }),
+                            [newChild.id]
+                        )
+                    }
 
-                    return node.children ? 
+                    const removeChildDeep = childToRemove => {
+                        editChildByLevel[i](
+                            descriptionNode, 
+                            produce(descriptionNode, draft => {
+                                delete draft.children[childToRemove.id];
+                            }),
+                            []
+                        )
+                    }
+
+                    return descriptionNode.children ? 
                         html`<${MillerColumn} 
                             key=${id}
-                            aggregationDescription=${node} 
-                            selectedChildId=${selectedList.get(i+1)}
-                            isLast=${i === selectedList.size - 2}
-                            addChild=${childData => { addChild(node, childData) } }
-                            editChild=${(currentChild, childData) => editChild(node, currentChild, childData)}
-                            removeChild=${child => { removeChild(node, child) }}
-                            onNodeSelection=${id => selectNode(id, i+1)},
+                            aggregationDescription=${descriptionNode} 
+                            selectedChildId=${selectedList[i+1]}
+                            isLast=${i === selectedList.length - 2}
+                            addChild=${ addChildDeep }
+                            editChild=${ (previousChild, newChild) => editChildByLevel[i+1](previousChild, newChild, []) }
+                            removeChild=${ removeChildDeep }}
+                            onNodeSelection=${id => setSelectionList(id ? [...selectedList.slice(0, i+1), id] : selectedList.slice(0, i+1))},
                         />` :
                         html`<${AggregationDescriptionLeafEditor} 
-                            aggregationDescriptionLeaf=${node}
-                            aggregatedDocumentBudgetaireCorrespondingNode=${aggregatedDocumentBudgetaire.getIn(keyPath)}
+                            aggregationDescriptionLeaf=${descriptionNode}
+                            aggregatedDocumentBudgetaireCorrespondingNode=${aggregatedNode}
                             planDeCompte=${planDeCompte}
-                            onFormulaChange=${formula => changeFormula(node, formula)}
+                            onFormulaChange=${formula => editChildByLevel[i](
+                                descriptionNode, 
+                                {id: descriptionNode.id, name: descriptionNode.name, formula}, 
+                                []
+                            )}
                         />`
-                }).toArray()
+                })
             }
         </div>
     </section>`

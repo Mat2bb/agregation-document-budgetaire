@@ -31,11 +31,3 @@ export const DocumentBudgetaire = Record({
     'IdColl': undefined,
     'rows': undefined
 });
-
-export function makeLigneBudgetId(ligneBudget){
-    return [
-        ligneBudget['CodRD'],
-        ligneBudget['Fonction'],
-        ligneBudget['Nature']
-    ].join(' ');
-}
