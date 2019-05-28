@@ -1,5 +1,5 @@
 import Bouture from 'https://cdn.jsdelivr.net/gh/DavidBruant/bouture@13cb6c683fa87e5feea574311dcda6353489bb3b/bouture.js'
-import memoize from 'fast-memoize'
+import memoize from '../memoize.js'
 import { sum } from 'd3-array';
 import { xml } from 'd3-fetch';
 

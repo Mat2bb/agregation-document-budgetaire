@@ -50,7 +50,7 @@ export default function xmlDocumentToDocumentBudgetaire(doc){
         Exer: exer,
         IdColl: doc.getElementsByTagName('IdColl')[0].getAttribute('V'),
 
-        rows: [...xmlRowsById.values()]
+        rows: new Set([...xmlRowsById.values()]
             .map(xmlRows => {
                 const amount = sum(xmlRows.map(r => Number(r['MtReal'])))
                 const r = xmlRows[0];
@@ -59,7 +59,7 @@ export default function xmlDocumentToDocumentBudgetaire(doc){
                     ...r,
                     'MtReal': amount
                 })
-            })
+            }))
     }
 
 }

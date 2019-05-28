@@ -1,40 +1,12 @@
-import { OrderedMap, List } from 'immutable';
-
 import Store from 'baredux'
+import produce, {original} from 'immer'
 
-import {AggregationDescription, AggregationDescriptionLeaf} from './finance/AggregationDataStructures.js'
 import {ASYNC_STATUS, STATUS_PENDING, STATUS_ERROR, STATUS_VALUE} from './asyncStatusHelpers.js'
 
 
-const aggregationDescriptionNodeToKeyPath = new WeakMap()
-
-function fillAggregationDescriptionNodeToKeyPath(aggregationDescription){
-    
-    const rootKeyPath = new List()
-
-    aggregationDescriptionNodeToKeyPath.set(aggregationDescription, rootKeyPath);
-
-    (function recursively(aggregationDescription, parentKeyPath){
-        aggregationDescription.children.forEach(child => {
-
-            if(!aggregationDescriptionNodeToKeyPath.get(child)){
-                const {id, children: grandChildren} = child;
-
-                const childKeyPath = parentKeyPath.push('children', id)
-                aggregationDescriptionNodeToKeyPath.set(child, childKeyPath)
-
-                if(grandChildren){
-                    recursively(child, childKeyPath)
-                }
-            }
-        })
-    })
-    (aggregationDescription, rootKeyPath)
-}
-
 export default new Store({
     state: {
-        millerColumnSelection: new List(),
+        millerColumnSelection: [],
         aggregationDescription: undefined,
         testedDocumentBudgetaireWithPlanDeCompte: undefined,
         documentBudgetairesWithPlanDeCompte: []
@@ -42,78 +14,56 @@ export default new Store({
     mutations: {
         aggregationDescription: {
             set(state, aggregationDescription){
-                fillAggregationDescriptionNodeToKeyPath(aggregationDescription)
-
-                state.aggregationDescription = aggregationDescription
-                state.millerColumnSelection = new List()
+                return produce(state, draft => {
+                    draft.aggregationDescription = aggregationDescription
+                    draft.millerColumnSelection = []
+                })
             },
-            addChild(state, parent, {id, name, type}){
-                const newNode = type === 'group' ? 
-                    new AggregationDescription({id, name, children: new OrderedMap()}) :
-                    new AggregationDescriptionLeaf({id, name, formula: ''})
-
-                const parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent)
-                const nodeKeyPath = parentKeyPath.push('children', id)
-
-                aggregationDescriptionNodeToKeyPath.set(newNode, nodeKeyPath)
-
-                state.aggregationDescription = state.aggregationDescription.setIn(nodeKeyPath, newNode)
-                fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
-
-                // select newly created node
-                state.millerColumnSelection = aggregationDescriptionNodeToKeyPath.get(newNode).filter(key => key !== 'children')
+            addChild(state, child){
+                // add child to only root
+                return produce(state, draft => {
+                    draft.aggregationDescription.children[child.id] = child
+                    
+                    // select newly created node
+                    draft.millerColumnSelection = [ child.id ]
+                })
             },
-            editChild(state, parent, currentChild, newChildData){
-                const {name, type, id} = newChildData;
-                const {formula, children} = currentChild;
+            editChild(state, previousChild, newChild, newSelectedList){
+                // edit child at only root
+                //console.log('editChild root', previousChild, newChild, newSelectedList)
 
-                const parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent)
-                const childKeyPath = parentKeyPath.push('children', id)
+                return produce(state, draft => {
+                    const {id: newId} = newChild;
+                    const {id: previousId} = previousChild;
 
-                const newNode = type === 'group' ?
-                    new AggregationDescription({id, name, children: children || new OrderedMap()}) :
-                    new AggregationDescriptionLeaf({id, name, formula: formula || ''})
+                    if(previousId !== newId){
+                        delete draft.aggregationDescription.children[previousId];
 
-                if(currentChild.id === newChildData.id){
-                    state.aggregationDescription = state.aggregationDescription.setIn(childKeyPath, newNode)
-                }
-                else{
-                    state.aggregationDescription = state.aggregationDescription
-                        .deleteIn( parentKeyPath.push('children', currentChild.id) )
-                        .setIn(childKeyPath, newNode)
+                        draft.millerColumnSelection[draft.millerColumnSelection.findIndex(id => id === previousId)] = newId
+                    }
 
-                    state.millerColumnSelection = state.millerColumnSelection
-                        .set(
-                            state.millerColumnSelection.findIndex(id => id === currentChild.id),
-                            id
-                        )
-                }
+                    draft.aggregationDescription.children[newId] = newChild
 
-                fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
+                    if(newSelectedList)
+                        draft.millerColumnSelection = [newChild.id, ...newSelectedList];
+                })
+
             },
-            removeChild(state, parent, child){
-                const parentKeyPath = aggregationDescriptionNodeToKeyPath.get(parent)
-                const toDeletePath = parentKeyPath.push('children', child.id)
-
-                state.millerColumnSelection = state.millerColumnSelection
-                        .slice( 0, state.millerColumnSelection.findIndex(id => id === child.id) )
-
-                state.aggregationDescription = state.aggregationDescription.deleteIn(toDeletePath)
-                fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
-            },
-            selectNode(state, nodeId, index){
-                if(state.millerColumnSelection.get(index) === nodeId){
-                    state.millerColumnSelection = state.millerColumnSelection.slice(0, index)
-                }
-                else{
-                    state.millerColumnSelection = state.millerColumnSelection.slice(0, index).push(nodeId)
-                }
-            },
-            changeFormula(state, node, newFormula){
-                const nodeFormulaKeyPath = aggregationDescriptionNodeToKeyPath.get(node).push('formula')
-                
-                state.aggregationDescription = state.aggregationDescription.setIn(nodeFormulaKeyPath, newFormula)
-                fillAggregationDescriptionNodeToKeyPath(state.aggregationDescription)
+            removeChild(state, child){
+                // add child to only root
+                return produce(state, draft => {
+                    delete draft.aggregationDescription.children[child.id]
+                    
+                    // select newly created node
+                    draft.millerColumnSelection = [];
+                })
+            }
+        },
+        millerColumnSelection: {
+            set(state, newSelection){
+                return produce(state, draft => {
+                    draft.millerColumnSelection = newSelection;
+                })
             }
         },
         documentBudgetaires: {
@@ -168,9 +118,11 @@ export default new Store({
         },
         testedDocumentBudgetaireWithPlanDeCompte: {
             set(state, docBudg){
-                state.testedDocumentBudgetaireWithPlanDeCompte = state.documentBudgetairesWithPlanDeCompte.find(
-                    ({documentBudgetaire}) => documentBudgetaire === docBudg
-                )
+                return produce(state, draft => {
+                    draft.testedDocumentBudgetaireWithPlanDeCompte = draft.documentBudgetairesWithPlanDeCompte.find(
+                        ({documentBudgetaire}) => original(documentBudgetaire) === docBudg
+                    )
+                })
             }
         }
     }

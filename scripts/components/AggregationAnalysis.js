@@ -1,4 +1,3 @@
-import { Set as ImmutableSet } from 'immutable';
 import debounce from 'lodash-es/debounce';
 import {h, Component} from 'preact'
 
@@ -7,9 +6,15 @@ import { getAggregatedDocumentBudgetaireLeaves } from '../finance/AggregationDat
 
 function makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire){
     const leaves = getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire)
-    const usedLigneBudgets = ImmutableSet.union(leaves.map(l => l.elements))
+    const usedLigneBudgets = new Set()
+    
+    for(const leaf of leaves){
+        for(const lb of leaf.elements){
+            usedLigneBudgets.add(lb);
+        }
+    }
 
-    return documentBudgetaire.rows.filter(ligneBudget => !usedLigneBudgets.has(ligneBudget)).toArray()
+    return [...documentBudgetaire.rows].filter(ligneBudget => !usedLigneBudgets.has(ligneBudget))
 }
 
 function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire){

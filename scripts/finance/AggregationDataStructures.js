@@ -1,7 +1,6 @@
-import { Record, Set as ImmutableSet, OrderedMap } from 'immutable';
 import { sum } from 'd3-array';
 
-import memoize from 'fast-memoize'
+import memoize from '../memoize.js'
 
 /*
 
@@ -9,7 +8,7 @@ import memoize from 'fast-memoize'
     The leaves contain a "formula" which acts like a filter on a DocumentBudgetaire
 
 interface AggregationDescription extends AggregationDescriptionNode, Readonly<{
-    children: OrderedMap<id, AggregationDescription | AggregationDescriptionLeaf>
+    children: Map<id, AggregationDescription | AggregationDescriptionLeaf>
 }>{}
 
 interface AggregationDescriptionNode extends Readonly<{
@@ -23,26 +22,11 @@ interface AggregationDescriptionLeaf extends AggregationDescriptionNode, Readonl
 
 */
 
-const AggregationDescriptionNodeFields = {
-    'id': undefined,
-    'name': undefined,
-}
-
-export const AggregationDescriptionLeaf = Record({
-    formula: undefined,
-    ...AggregationDescriptionNodeFields
-})
-
-export const AggregationDescription = Record({
-    children: undefined,
-    ...AggregationDescriptionNodeFields
-})
-
 export function AggregationDescriptionToJSON(aggregationDescription){
     const {id, name, formula, children} = aggregationDescription
 
     return children ?
-        { id, name, children : children.valueSeq().toArray().map(AggregationDescriptionToJSON) } :
+        { id, name, children : Object.values(children).map(AggregationDescriptionToJSON) } :
         { id, name, formula } ;
 }
 
@@ -50,10 +34,8 @@ export function AggregationDescriptionFromJSON(aggregationDescriptionJSON){
     const {id, name, formula, children} = aggregationDescriptionJSON
 
     return children ?
-        AggregationDescription(
-            { id, name, children: OrderedMap(children.map(c => [c.id, AggregationDescriptionFromJSON(c)])) }
-        ) :
-        AggregationDescriptionLeaf({ id, name, formula }) ;
+        { id, name, children: Object.fromEntries(children.map(c => [c.id, AggregationDescriptionFromJSON(c)])) } :
+        { id, name, formula } ;
 }
 
 
@@ -71,7 +53,7 @@ interface AggregationDocumentBudgetaireNode extends Readonly<{
 }>{}
 
 interface AggregatedDocumentBudgetaireLeaf extends AggregationDocumentBudgetaireNode, Readonly<{
-    elements: ImmutableSet<LigneBudget>
+    elements: Set<LigneBudget>
 }>{}
 
 
@@ -83,24 +65,9 @@ interface AggregateMaker {
 
 */
 
-const AggregatedDocumentBudgetaireNodeFields = {
-    'id': undefined,
-    'name': undefined,
-}
-
-export const AggregatedDocumentBudgetaireLeaf = Record({
-    elements: undefined,
-    ...AggregatedDocumentBudgetaireNodeFields
-})
-
-export const AggregatedDocumentBudgetaire = Record({
-    children: undefined,
-    ...AggregatedDocumentBudgetaireNodeFields
-})
-
 export function getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire){
     return aggregatedDocumentBudgetaire.children ?
-        aggregatedDocumentBudgetaire.children.valueSeq().map(getAggregatedDocumentBudgetaireLeaves).flatten() :
+        Object.values(aggregatedDocumentBudgetaire.children).map(getAggregatedDocumentBudgetaireLeaves).flat() :
         aggregatedDocumentBudgetaire
 }
 
@@ -113,7 +80,15 @@ function rawAggregatedDocumentBudgetaireNodeElements(node){
     if(!node.children)
         return node.elements
     else{
-        return ImmutableSet.union(node.children.map(aggregatedDocumentBudgetaireNodeElements))
+        const union = new Set()
+    
+        for(const child of node.children){
+            for(const el of aggregatedDocumentBudgetaireNodeElements(child)){
+                union.add(el);
+            }
+        }
+
+        return union
     }
 }
 
@@ -123,11 +98,13 @@ export const aggregatedDocumentBudgetaireNodeElements = memoize(rawAggregatedDoc
     Function to compute the LigneBudget elements total of a given node in the AggregatedDocumentBudgetaire tree
 */
 
+
 function rawAggregatedDocumentBudgetaireNodeTotal(node){
-    // .toArray is carefully placed so the result stops being a Set *before* the .map
-    // if the .map was done before the .toArray, similar amounts would be counted only once leading
+    // [...arr] is carefully placed so the result stops being a Set *before* the .map
+    // if the .map was done before the [...arr], similar amounts would be counted only once leading
     // to an incorrect sum
-    return sum(aggregatedDocumentBudgetaireNodeElements(node).toArray().map(row => row['MtReal']))
+    
+    return sum([...aggregatedDocumentBudgetaireNodeElements(node)].map(row => row['MtReal']))
 }
 
 export const aggregatedDocumentBudgetaireNodeTotal = memoize(rawAggregatedDocumentBudgetaireNodeTotal)
