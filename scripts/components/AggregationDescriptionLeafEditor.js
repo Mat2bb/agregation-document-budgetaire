@@ -72,45 +72,50 @@ export default function AggregationDescriptionLeafEditor({
             <div>
                 <strong>Formule</strong> <a class="help" target="_blank" href="./exemples_formules.html">?</a>
                 <${FormulaEditor} key=${id} formula=${formula} onFormulaChange=${onFormulaChange}/>
-                <table class="summary">
-                    <tr>
-                        <td>Nombre d'éléments</td>
-                        <td>
-                            <strong>
-                                ${aggregatedDocumentBudgetaireNodeElements(aggregatedDocumentBudgetaireCorrespondingNode).size}
-                            </strong>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Total</td>
-                        <td class="money-amount">
-                            <strong>
-                            ${aggregatedDocumentBudgetaireNodeTotal(aggregatedDocumentBudgetaireCorrespondingNode).toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}
-                            </strong>
-                        </td>
-                    </tr>
-                </table>
-                <table class="formula-rows">
-                    <thead>
-                        <tr>
-                            ${['RDFI', 'Fonction', 'Nature', 'Montant'].map(s => html`<th>${s}</th>`)}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${
-                            aggregatedDocumentBudgetaireCorrespondingNode.elements
-                                .toArray().sort((r1, r2) => r2['MtReal'] - r1['MtReal']).map(r => {
-                                return html`
-                                    <tr>
-                                        <td>${r['CodRD']+planDeCompte.ligneBudgetFI(r)}</td>
-                                        <td>${r['Fonction']}</td>
-                                        <td>${r['Nature']}</td>
-                                        <td class="money-amount">${r['MtReal'].toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}</td>
-                                    </tr>`
-                            })
-                        }      
-                    </tbody>
-                </table>
+                
+                ${
+                    aggregatedDocumentBudgetaireCorrespondingNode ?
+                        html`<table class="summary">
+                            <tr>
+                                <td>Nombre d'éléments</td>
+                                <td>
+                                    <strong>
+                                        ${aggregatedDocumentBudgetaireCorrespondingNode.elements.size}
+                                    </strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Total</td>
+                                <td class="money-amount">
+                                    <strong>
+                                    ${aggregatedDocumentBudgetaireNodeTotal(aggregatedDocumentBudgetaireCorrespondingNode).toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}
+                                    </strong>
+                                </td>
+                            </tr>
+                        </table>
+                        <table class="formula-rows">
+                            <thead>
+                                <tr>
+                                    ${['RDFI', 'Fonction', 'Nature', 'Montant'].map(s => html`<th>${s}</th>`)}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${
+                                    [...aggregatedDocumentBudgetaireCorrespondingNode.elements]
+                                        .sort((r1, r2) => r2['MtReal'] - r1['MtReal']).map(r => {
+                                        return html`
+                                            <tr>
+                                                <td>${r['CodRD']+planDeCompte.ligneBudgetFI(r)}</td>
+                                                <td>${r['Fonction']}</td>
+                                                <td>${r['Nature']}</td>
+                                                <td class="money-amount">${r['MtReal'].toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}</td>
+                                            </tr>`
+                                    })
+                                }      
+                            </tbody>
+                        </table>` :
+                        undefined
+                    }
             </div>
         </div>
     `    

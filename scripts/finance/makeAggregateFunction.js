@@ -1,6 +1,5 @@
-import memoize from 'fast-memoize'
+import memoize from '../memoize.js'
 
-import {AggregatedDocumentBudgetaire, AggregatedDocumentBudgetaireLeaf} from './AggregationDataStructures.js'
 import makeLigneBudgetFilterFromFormula from '../DocumentBudgetaireQueryLanguage/makeLigneBudgetFilterFromFormula.js'
 
 export default memoize(function makeAggregateFunction(aggregationDescription, planDeCompte){
@@ -10,15 +9,15 @@ export default memoize(function makeAggregateFunction(aggregationDescription, pl
 
         return children ?
             // non-leaf
-            AggregatedDocumentBudgetaire({
+            {
                 id, name, 
-                children: children.map(n => aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(n, documentBudgetaire, planDeCompte))
-            }) :
+                children: Object.values(children).map(n => aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(n, documentBudgetaire, planDeCompte))
+            } :
             // leaf, has .formula
-            AggregatedDocumentBudgetaireLeaf({
+            {
                 id, name, 
-                elements: documentBudgetaire.rows.filter(makeLigneBudgetFilterFromFormula(formula, planDeCompte))
-            })
+                elements: new Set([...documentBudgetaire.rows].filter(makeLigneBudgetFilterFromFormula(formula, planDeCompte)))
+            }
     });
 
     return memoize(function aggregate(docBudg){

@@ -1,8 +1,5 @@
-import { OrderedMap } from 'immutable';
 import {h, render} from 'preact'
 import {csv, xml, text} from 'd3-fetch';
-
-import {AggregationDescription} from '../finance/AggregationDataStructures.js'
 
 import xmlDocumentToDocumentBudgetaire from '../finance/xmlDocumentToDocumentBudgetaire.js'
 import makeNatureToChapitreFI from '../finance/makeNatureToChapitreFI.js'
@@ -14,16 +11,16 @@ import store from '../store.js'
 
 import { getStoredState, saveState } from '../stateStorage.js'
 
-import montreuilCVSToAggregationFormulas from '../montreuilCVSToAggregationFormulas.js'
+//import montreuilCVSToAggregationFormulas from '../montreuilCVSToAggregationFormulas.js'
 
 const actions =_actions(store);
 
 // initialize store
-store.mutations.aggregationDescription.set(new AggregationDescription({
+store.mutations.aggregationDescription.set({
 	id: 'racine',
 	name: 'racine',
-	children: new OrderedMap()
-}))
+	children: Object.create(null)
+})
 
 
 const isMontreuil = new Set((new URLSearchParams(location.search)).keys()).has('montreuil')
@@ -37,7 +34,7 @@ if(isMontreuil){
 	])
 	.then(([doc, natureToChapitreFI]) => xmlDocumentToDocumentBudgetaire(doc, natureToChapitreFI))
 	.then(docBudg => {
-		console.log('docBudg', docBudg.toJS())
+		console.log('docBudg', docBudg)
 		store.mutations.testedDocumentBudgetaire.setValue(docBudg)
 		return docBudg
 	})
@@ -68,7 +65,7 @@ else{
 	const storedAggregationDescription = getStoredState()
 
 	if(storedAggregationDescription){
-		console.log('storedAggregationDescription', storedAggregationDescription.toJS())
+		console.log('storedAggregationDescription', storedAggregationDescription)
 		store.mutations.aggregationDescription.set(storedAggregationDescription)
 	}
 
@@ -90,7 +87,6 @@ renderUI()
 
 // render when state changes
 store.subscribe(renderUI)
-
 
 // Save state regularly
 store.subscribe(saveState)
