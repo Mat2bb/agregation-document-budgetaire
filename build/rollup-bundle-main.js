@@ -4403,7 +4403,7 @@ function (_Component) {
     };
 
     _this.buttonClick = function (e) {
-      var value = _this.state.value + e.target.textContent;
+      var value = _this.state.value + e.target.getAttribute('data-add');
 
       _this.setState({
         value: value
@@ -4434,10 +4434,58 @@ function (_Component) {
         class: "formula-editor"
       }, h("div", {
         class: "buttons"
-      }, ['DF', 'RF', 'DI', 'RI', '∩', '∪'].map(function (text) {
+      }, [{
+        add: 'DF',
+        legend: 'DF'
+      }, {
+        add: 'RF',
+        legend: 'RF'
+      }, {
+        add: 'DI',
+        legend: 'DI'
+      }, {
+        add: 'RI',
+        legend: 'RI'
+      }].map(function (_ref2) {
+        var add = _ref2.add,
+            legend = _ref2.legend;
         return h("button", {
+          "data-add": add,
           onClick: _this2.buttonClick
-        }, text);
+        }, legend);
+      })), h("div", {
+        class: "buttons"
+      }, [{
+        add: '∩',
+        legend: '∩'
+      }, {
+        add: '∪',
+        legend: '∪'
+      }].map(function (_ref3) {
+        var add = _ref3.add,
+            legend = _ref3.legend;
+        return h("button", {
+          "data-add": add,
+          onClick: _this2.buttonClick
+        }, legend);
+      })), h("div", {
+        class: "buttons"
+      }, [{
+        add: 'F',
+        legend: 'F(onction)'
+      }, {
+        add: 'C',
+        legend: 'C(compte)'
+      }, {
+        add: 'Ch',
+        legend: 'Ch(apitre)'
+      }].map(function (_ref4) {
+        var add = _ref4.add,
+            legend = _ref4.legend;
+        return h("button", {
+          "data-add": add,
+          onClick: _this2.buttonClick
+        }, legend);
       })), h("input", {
         type: "text",
         value: value,
@@ -4450,11 +4498,11 @@ function (_Component) {
   return FormulaEditor;
 }(Component);
 
-function AggregationDescriptionLeafEditor(_ref2) {
-  var aggregationDescriptionLeaf = _ref2.aggregationDescriptionLeaf,
-      aggregatedDocumentBudgetaireCorrespondingNode = _ref2.aggregatedDocumentBudgetaireCorrespondingNode,
-      planDeCompte = _ref2.planDeCompte,
-      onFormulaChange = _ref2.onFormulaChange;
+function AggregationDescriptionLeafEditor(_ref5) {
+  var aggregationDescriptionLeaf = _ref5.aggregationDescriptionLeaf,
+      aggregatedDocumentBudgetaireCorrespondingNode = _ref5.aggregatedDocumentBudgetaireCorrespondingNode,
+      planDeCompte = _ref5.planDeCompte,
+      onFormulaChange = _ref5.onFormulaChange;
   var id = aggregationDescriptionLeaf.id,
       name = aggregationDescriptionLeaf.name,
       formula = aggregationDescriptionLeaf.formula;
@@ -4624,145 +4672,190 @@ function (_Component) {
 }(Component); // https://en.wikipedia.org/wiki/Miller_columns
 
 
-function MillerColumns(_ref3) {
-  var aggregationDescription = _ref3.aggregationDescription,
-      aggregatedDocumentBudgetaire = _ref3.aggregatedDocumentBudgetaire,
-      planDeCompte = _ref3.planDeCompte,
-      selectedList = _ref3.selectedList,
-      _ref3$aggregationDesc = _ref3.aggregationDescriptionMutations,
-      addChild = _ref3$aggregationDesc.addChild,
-      removeChild = _ref3$aggregationDesc.removeChild,
-      _editChild = _ref3$aggregationDesc.editChild,
-      setSelectionList = _ref3.millerColumnSelection.set;
-  var firstSelectedId = selectedList[0];
-  var editChildByLevel = selectedList.map(function (id, i) {
-    return i === 0 ? _editChild : function (previousChild, newChild, newSelectedList) {
-      var parent = aggregationDescription;
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
+var MillerColumns =
+/*#__PURE__*/
+function (_Component2) {
+  _inherits(MillerColumns, _Component2);
 
-      try {
-        for (var _iterator = selectedList.slice(0, i)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var selected = _step.value;
-          parent = parent.children[selected];
+  function MillerColumns(props) {
+    var _this3;
+
+    _classCallCheck(this, MillerColumns);
+
+    _this3 = _possibleConstructorReturn(this, _getPrototypeOf(MillerColumns).call(this, props));
+    _this3.state = {
+      adding: Object.values(props.aggregationDescription.children).length === 0,
+      editingNode: undefined
+    };
+    _this3.columnsContainerElement = undefined;
+
+    _this3.setColumnsContainerElement = function (element) {
+      _this3.columnsContainerElement = element;
+    };
+
+    return _this3;
+  }
+
+  _createClass(MillerColumns, [{
+    key: "componentDidUpdate",
+    value: function componentDidUpdate() {
+      this.columnsContainerElement.scrollLeft = this.columnsContainerElement.scrollWidth;
+    }
+  }, {
+    key: "render",
+    value: function render(_ref3) {
+      var aggregationDescription = _ref3.aggregationDescription,
+          aggregatedDocumentBudgetaire = _ref3.aggregatedDocumentBudgetaire,
+          planDeCompte = _ref3.planDeCompte,
+          selectedList = _ref3.selectedList,
+          _ref3$aggregationDesc = _ref3.aggregationDescriptionMutations,
+          addChild = _ref3$aggregationDesc.addChild,
+          removeChild = _ref3$aggregationDesc.removeChild,
+          _editChild = _ref3$aggregationDesc.editChild,
+          setSelectionList = _ref3.millerColumnSelection.set;
+      var firstSelectedId = selectedList[0];
+      var editChildByLevel = selectedList.map(function (id, i) {
+        return i === 0 ? _editChild : function (previousChild, newChild, newSelectedList) {
+          var parent = aggregationDescription;
+          var _iteratorNormalCompletion = true;
+          var _didIteratorError = false;
+          var _iteratorError = undefined;
+
+          try {
+            for (var _iterator = selectedList.slice(0, i)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+              var selected = _step.value;
+              parent = parent.children[selected];
+            }
+          } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion && _iterator.return != null) {
+                _iterator.return();
+              }
+            } finally {
+              if (_didIteratorError) {
+                throw _iteratorError;
+              }
+            }
+          }
+
+          editChildByLevel[i - 1](parent, produce(parent, function (draft) {
+            var newId = newChild.id;
+            var previousId = previousChild.id;
+
+            if (previousId !== newId) {
+              delete draft.children[previousId];
+            }
+
+            draft.children[newId] = newChild;
+          }), [newChild.id].concat(_toConsumableArray(newSelectedList)));
+        };
+      });
+      return h("section", {
+        class: "miller-columns"
+      }, h("h2", null, "Cr\xE9ation/\xE9dition"), h("div", {
+        class: "columns",
+        ref: this.setColumnsContainerElement
+      }, h(MillerColumn, {
+        aggregationDescription: aggregationDescription,
+        selectedChildId: firstSelectedId,
+        isLast: selectedList.length === 1,
+        addChild: addChild,
+        editChild: function editChild(previousChild, newChild) {
+          return _editChild(previousChild, newChild, []);
+        },
+        removeChild: removeChild,
+        onNodeSelection: function onNodeSelection(id) {
+          return setSelectionList(id ? [id] : []);
         }
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-      } finally {
+      }), selectedList.map(function (id, i) {
+        var descriptionNode = aggregationDescription;
+        var aggregatedNode = aggregatedDocumentBudgetaire;
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
+
         try {
-          if (!_iteratorNormalCompletion && _iterator.return != null) {
-            _iterator.return();
+          var _loop = function _loop() {
+            var selected = _step2.value;
+            descriptionNode = descriptionNode.children[selected];
+            aggregatedNode = aggregatedNode && aggregatedNode.children.find(function (c) {
+              return c.id === selected;
+            });
+          };
+
+          for (var _iterator2 = selectedList.slice(0, i + 1)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            _loop();
           }
+        } catch (err) {
+          _didIteratorError2 = true;
+          _iteratorError2 = err;
         } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
+          try {
+            if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
+              _iterator2.return();
+            }
+          } finally {
+            if (_didIteratorError2) {
+              throw _iteratorError2;
+            }
           }
         }
-      }
 
-      editChildByLevel[i - 1](parent, produce(parent, function (draft) {
-        var newId = newChild.id;
-        var previousId = previousChild.id;
+        var addChildDeep = function addChildDeep(newChild) {
+          editChildByLevel[i](descriptionNode, produce(descriptionNode, function (draft) {
+            draft.children[newChild.id] = newChild;
+          }), [newChild.id]);
+        };
 
-        if (previousId !== newId) {
-          delete draft.children[previousId];
-        }
+        var removeChildDeep = function removeChildDeep(childToRemove) {
+          editChildByLevel[i](descriptionNode, produce(descriptionNode, function (draft) {
+            delete draft.children[childToRemove.id];
+          }), []);
+        };
 
-        draft.children[newId] = newChild;
-      }), [newChild.id].concat(_toConsumableArray(newSelectedList)));
-    };
-  });
-  return h("section", {
-    class: "miller-columns"
-  }, h("h2", null, "Cr\xE9ation/\xE9dition"), h("div", {
-    class: "columns"
-  }, h(MillerColumn, {
-    aggregationDescription: aggregationDescription,
-    selectedChildId: firstSelectedId,
-    isLast: selectedList.length === 1,
-    addChild: addChild,
-    editChild: function editChild(previousChild, newChild) {
-      return _editChild(previousChild, newChild, []);
-    },
-    removeChild: removeChild,
-    onNodeSelection: function onNodeSelection(id) {
-      return setSelectionList(id ? [id] : []);
-    }
-  }), selectedList.map(function (id, i) {
-    var descriptionNode = aggregationDescription;
-    var aggregatedNode = aggregatedDocumentBudgetaire;
-    var _iteratorNormalCompletion2 = true;
-    var _didIteratorError2 = false;
-    var _iteratorError2 = undefined;
+        return descriptionNode.children ? h(MillerColumn, {
+          key: id,
+          aggregationDescription: descriptionNode,
+          selectedChildId: selectedList[i + 1],
+          isLast: i === selectedList.length - 2,
+          addChild: addChildDeep,
+          editChild: function editChild(previousChild, newChild) {
+            return editChildByLevel[i](descriptionNode, produce(descriptionNode, function (draft) {
+              var newId = newChild.id;
+              var previousId = previousChild.id;
 
-    try {
-      var _loop = function _loop() {
-        var selected = _step2.value;
-        descriptionNode = descriptionNode.children[selected];
-        aggregatedNode = aggregatedNode && aggregatedNode.children.find(function (c) {
-          return c.id === selected;
+              if (previousId !== newId) {
+                delete draft.children[previousId];
+              }
+
+              draft.children[newId] = newChild;
+            }), []);
+          },
+          removeChild: removeChildDeep,
+          onNodeSelection: function onNodeSelection(id) {
+            return setSelectionList(id ? [].concat(_toConsumableArray(selectedList.slice(0, i + 1)), [id]) : selectedList.slice(0, i + 1));
+          }
+        }) : h(AggregationDescriptionLeafEditor, {
+          aggregationDescriptionLeaf: descriptionNode,
+          aggregatedDocumentBudgetaireCorrespondingNode: aggregatedNode,
+          planDeCompte: planDeCompte,
+          onFormulaChange: function onFormulaChange(formula) {
+            return editChildByLevel[i](descriptionNode, {
+              id: descriptionNode.id,
+              name: descriptionNode.name,
+              formula: formula
+            }, []);
+          }
         });
-      };
-
-      for (var _iterator2 = selectedList.slice(0, i + 1)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-        _loop();
-      }
-    } catch (err) {
-      _didIteratorError2 = true;
-      _iteratorError2 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
-          _iterator2.return();
-        }
-      } finally {
-        if (_didIteratorError2) {
-          throw _iteratorError2;
-        }
-      }
+      })));
     }
+  }]);
 
-    var addChildDeep = function addChildDeep(newChild) {
-      editChildByLevel[i](descriptionNode, produce(descriptionNode, function (draft) {
-        draft.children[newChild.id] = newChild;
-      }), [newChild.id]);
-    };
-
-    var removeChildDeep = function removeChildDeep(childToRemove) {
-      editChildByLevel[i](descriptionNode, produce(descriptionNode, function (draft) {
-        delete draft.children[childToRemove.id];
-      }), []);
-    };
-
-    return descriptionNode.children ? h(MillerColumn, {
-      key: id,
-      aggregationDescription: descriptionNode,
-      selectedChildId: selectedList[i + 1],
-      isLast: i === selectedList.length - 2,
-      addChild: addChildDeep,
-      editChild: function editChild(previousChild, newChild) {
-        return editChildByLevel[i + 1](previousChild, newChild, []);
-      },
-      removeChild: removeChildDeep,
-      onNodeSelection: function onNodeSelection(id) {
-        return setSelectionList(id ? [].concat(_toConsumableArray(selectedList.slice(0, i + 1)), [id]) : selectedList.slice(0, i + 1));
-      }
-    }) : h(AggregationDescriptionLeafEditor, {
-      aggregationDescriptionLeaf: descriptionNode,
-      aggregatedDocumentBudgetaireCorrespondingNode: aggregatedNode,
-      planDeCompte: planDeCompte,
-      onFormulaChange: function onFormulaChange(formula) {
-        return editChildByLevel[i](descriptionNode, {
-          id: descriptionNode.id,
-          name: descriptionNode.name,
-          formula: formula
-        }, []);
-      }
-    });
-  })));
-}
+  return MillerColumns;
+}(Component);
 
 function AggregationDescriptionImportExport(_ref4) {
   var triggerAggregationDescriptionDownload = _ref4.triggerAggregationDescriptionDownload,

@@ -29,7 +29,7 @@ class FormulaEditor extends Component {
         }
 
         this.buttonClick = e => {
-            const value = this.state.value + e.target.textContent;
+            const value = this.state.value + e.target.getAttribute('data-add');
 
             this.setState({value})
             onFormulaChange(value)
@@ -50,8 +50,20 @@ class FormulaEditor extends Component {
             <section class="formula-editor">
                 <div class="buttons">
                     ${
-                        ['DF', 'RF', 'DI', 'RI', '∩', '∪']
-                            .map(text => html`<button onClick=${this.buttonClick}>${text}</button>`)
+                        [{add:'DF', legend: 'DF'}, {add:'RF', legend: 'RF'}, {add:'DI', legend: 'DI'}, {add:'RI', legend: 'RI'}]
+                        .map(({add, legend}) => html`<button data-add="${add}" onClick=${this.buttonClick}>${legend}</button>`)
+                    }
+                </div>
+                <div class="buttons">
+                    ${
+                        [{add:'∩', legend: '∩'}, {add:'∪', legend: '∪'}]
+                        .map(({add, legend}) => html`<button data-add="${add}" onClick=${this.buttonClick}>${legend}</button>`)
+                    }
+                </div>
+                <div class="buttons">
+                    ${
+                        [{add:'F', legend: 'F(onction)'}, {add:'C', legend: 'C(compte)'}, {add:'Ch', legend: 'Ch(apitre)'}]
+                        .map(({add, legend}) => html`<button data-add="${add}" onClick=${this.buttonClick}>${legend}</button>`)
                     }
                 </div>
                 <input type="text" value=${value} ref=${this.setTextInputRef} onInput=${this.handleChange} />  
