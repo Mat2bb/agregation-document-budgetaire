@@ -113,103 +113,123 @@ class MillerColumn extends Component {
 }
 
 // https://en.wikipedia.org/wiki/Miller_columns
-function MillerColumns({aggregationDescription, aggregatedDocumentBudgetaire, planDeCompte, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild}, millerColumnSelection: {set: setSelectionList}}){
+class MillerColumns extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            adding: Object.values(props.aggregationDescription.children).length === 0,
+            editingNode: undefined
+        };
 
-    const firstSelectedId = selectedList[0];
+        this.columnsContainerElement = undefined;
 
-    const editChildByLevel = selectedList.map((id, i) => {
+        this.setColumnsContainerElement = element => {
+            this.columnsContainerElement = element;
+        };
+    }
 
-        return i === 0 ? editChild : (previousChild, newChild, newSelectedList) => {
-            let parent = aggregationDescription
+    componentDidUpdate(){
+        this.columnsContainerElement.scrollLeft = this.columnsContainerElement.scrollWidth
+    }
+
+    render({aggregationDescription, aggregatedDocumentBudgetaire, planDeCompte, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild}, millerColumnSelection: {set: setSelectionList}}){
+
+        const firstSelectedId = selectedList[0];
+
+        const editChildByLevel = selectedList.map((id, i) => {
+
+            return i === 0 ? editChild : (previousChild, newChild, newSelectedList) => {
+                let parent = aggregationDescription
+                            
+                for(const selected of selectedList.slice(0, i)){
+                    parent = parent.children[selected]
+                }
+
+                editChildByLevel[i-1](
+                    parent, 
+                    produce(parent, draft => {
+                        const {id: newId} = newChild;
+                        const {id: previousId} = previousChild;
+        
+                        if(previousId !== newId){
+                            delete draft.children[previousId];
+                        }
+        
+                        draft.children[newId] = newChild
+                    }),
+                    [newChild.id, ...newSelectedList]
+                )
+            }
+        })
+
+        return html`<section class="miller-columns">
+            <h2>Création/édition</h2>
+            <div class="columns" ref=${this.setColumnsContainerElement}>
+                <${MillerColumn} 
+                    aggregationDescription=${aggregationDescription} 
+                    selectedChildId=${firstSelectedId}
+                    isLast=${selectedList.length === 1}
+                    addChild=${addChild}
+                    editChild=${(previousChild, newChild) => editChild(previousChild, newChild, [])}
+                    removeChild=${removeChild}}
+                    onNodeSelection=${id => setSelectionList(id ? [id] : [])},
+                />
+                ${
+                    selectedList.map((id, i) => {
+                        let descriptionNode = aggregationDescription
+                        let aggregatedNode = aggregatedDocumentBudgetaire
                         
-            for(const selected of selectedList.slice(0, i)){
-                parent = parent.children[selected]
-            }
+                        for(const selected of selectedList.slice(0, i+1)){
+                            descriptionNode = descriptionNode.children[selected]
+                            aggregatedNode = aggregatedNode && aggregatedNode.children.find(c => c.id === selected)
+                        }
 
-            editChildByLevel[i-1](
-                parent, 
-                produce(parent, draft => {
-                    const {id: newId} = newChild;
-                    const {id: previousId} = previousChild;
-    
-                    if(previousId !== newId){
-                        delete draft.children[previousId];
-                    }
-    
-                    draft.children[newId] = newChild
-                }),
-                [newChild.id, ...newSelectedList]
-            )
-        }
-    })
-
-    return html`<section class="miller-columns">
-        <h2>Création/édition</h2>
-        <div class="columns">
-            <${MillerColumn} 
-                aggregationDescription=${aggregationDescription} 
-                selectedChildId=${firstSelectedId}
-                isLast=${selectedList.length === 1}
-                addChild=${addChild}
-                editChild=${(previousChild, newChild) => editChild(previousChild, newChild, [])}
-                removeChild=${removeChild}}
-                onNodeSelection=${id => setSelectionList(id ? [id] : [])},
-            />
-            ${
-                selectedList.map((id, i) => {
-                    let descriptionNode = aggregationDescription
-                    let aggregatedNode = aggregatedDocumentBudgetaire
-                    
-                    for(const selected of selectedList.slice(0, i+1)){
-                        descriptionNode = descriptionNode.children[selected]
-                        aggregatedNode = aggregatedNode && aggregatedNode.children.find(c => c.id === selected)
-                    }
-
-                    const addChildDeep = newChild => {
-                        editChildByLevel[i](
-                            descriptionNode, 
-                            produce(descriptionNode, draft => {
-                                draft.children[newChild.id] = newChild;
-                            }),
-                            [newChild.id]
-                        )
-                    }
-
-                    const removeChildDeep = childToRemove => {
-                        editChildByLevel[i](
-                            descriptionNode, 
-                            produce(descriptionNode, draft => {
-                                delete draft.children[childToRemove.id];
-                            }),
-                            []
-                        )
-                    }
-
-                    return descriptionNode.children ? 
-                        html`<${MillerColumn} 
-                            key=${id}
-                            aggregationDescription=${descriptionNode} 
-                            selectedChildId=${selectedList[i+1]}
-                            isLast=${i === selectedList.length - 2}
-                            addChild=${ addChildDeep }
-                            editChild=${ (previousChild, newChild) => editChildByLevel[i+1](previousChild, newChild, []) }
-                            removeChild=${ removeChildDeep }}
-                            onNodeSelection=${id => setSelectionList(id ? [...selectedList.slice(0, i+1), id] : selectedList.slice(0, i+1))},
-                        />` :
-                        html`<${AggregationDescriptionLeafEditor} 
-                            aggregationDescriptionLeaf=${descriptionNode}
-                            aggregatedDocumentBudgetaireCorrespondingNode=${aggregatedNode}
-                            planDeCompte=${planDeCompte}
-                            onFormulaChange=${formula => editChildByLevel[i](
+                        const addChildDeep = newChild => {
+                            editChildByLevel[i](
                                 descriptionNode, 
-                                {id: descriptionNode.id, name: descriptionNode.name, formula}, 
+                                produce(descriptionNode, draft => {
+                                    draft.children[newChild.id] = newChild;
+                                }),
+                                [newChild.id]
+                            )
+                        }
+
+                        const removeChildDeep = childToRemove => {
+                            editChildByLevel[i](
+                                descriptionNode, 
+                                produce(descriptionNode, draft => {
+                                    delete draft.children[childToRemove.id];
+                                }),
                                 []
-                            )}
-                        />`
-                })
-            }
-        </div>
-    </section>`
+                            )
+                        }
+
+                        return descriptionNode.children ? 
+                            html`<${MillerColumn} 
+                                key=${id}
+                                aggregationDescription=${descriptionNode} 
+                                selectedChildId=${selectedList[i+1]}
+                                isLast=${i === selectedList.length - 2}
+                                addChild=${ addChildDeep }
+                                editChild=${ (previousChild, newChild) => editChildByLevel[i+1](previousChild, newChild, []) }
+                                removeChild=${ removeChildDeep }}
+                                onNodeSelection=${id => setSelectionList(id ? [...selectedList.slice(0, i+1), id] : selectedList.slice(0, i+1))},
+                            />` :
+                            html`<${AggregationDescriptionLeafEditor} 
+                                aggregationDescriptionLeaf=${descriptionNode}
+                                aggregatedDocumentBudgetaireCorrespondingNode=${aggregatedNode}
+                                planDeCompte=${planDeCompte}
+                                onFormulaChange=${formula => editChildByLevel[i](
+                                    descriptionNode, 
+                                    {id: descriptionNode.id, name: descriptionNode.name, formula}, 
+                                    []
+                                )}
+                            />`
+                    })
+                }
+            </div>
+        </section>`
+    }
 }
 
 
