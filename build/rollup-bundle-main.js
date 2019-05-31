@@ -2052,11 +2052,52 @@ function Serializer() {
       }
     }).join(' ');
   };
+} // copy of most useful code of fast-memoize
+
+
+function isPrimitive$1(value) {
+  return value == null || typeof value === 'number' || typeof value === 'boolean'; // || typeof value === "string" 'unsafe' primitive for our needs
+}
+
+function monadic$1(fn, cache, serializer, arg) {
+  var cacheKey = isPrimitive$1(arg) ? arg : serializer(arg);
+  var computedValue = cache.get(cacheKey);
+
+  if (typeof computedValue === 'undefined') {
+    computedValue = fn.call(this, arg);
+    cache.set(cacheKey, computedValue);
+  }
+
+  return computedValue;
+}
+
+function variadic$1(fn, cache, serializer) {
+  for (var _len2 = arguments.length, args = new Array(_len2 > 3 ? _len2 - 3 : 0), _key2 = 3; _key2 < _len2; _key2++) {
+    args[_key2 - 3] = arguments[_key2];
+  }
+
+  var cacheKey = serializer.apply(void 0, args);
+  var computedValue = cache.get(cacheKey);
+
+  if (typeof computedValue === 'undefined') {
+    computedValue = fn.apply(this, args);
+    cache.set(cacheKey, computedValue);
+  }
+
+  return computedValue;
+}
+
+function assemble$1(fn, context, strategy, cache, serialize) {
+  return strategy.bind(context, fn, cache, serialize);
 }
 
 function memoize$1(fn) {
   return src(fn, {
-    serializer: new Serializer()
+    serializer: new Serializer(),
+    strategy: function strategyDefault(fn, options) {
+      var strategy = fn.length === 1 ? monadic$1 : variadic$1;
+      return assemble$1(fn, this, strategy, options.cache.create(), options.serializer);
+    }
   });
 }
 
