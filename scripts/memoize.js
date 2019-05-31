@@ -26,7 +26,7 @@ function Serializer(){
                         objectCounter.set(arg, id)
                         next++
                     }
-                    return id;
+                    return id.toString(36);
                 }
                 default: {
                     console.error('Unhandled type', typeof arg)
