@@ -37,6 +37,57 @@ function Serializer(){
     }
 }
 
+// copy of most useful code of fast-memoize
+function isPrimitive (value) {
+    return value == null || typeof value === 'number' || typeof value === 'boolean' // || typeof value === "string" 'unsafe' primitive for our needs
+}
+
+function monadic (fn, cache, serializer, arg) {
+    var cacheKey = isPrimitive(arg) ? arg : serializer(arg)
+  
+    var computedValue = cache.get(cacheKey)
+    if (typeof computedValue === 'undefined') {
+      computedValue = fn.call(this, arg)
+      cache.set(cacheKey, computedValue)
+    }
+  
+    return computedValue
+}
+
+function variadic (fn, cache, serializer, ...args) {
+    var cacheKey = serializer(...args)
+  
+    var computedValue = cache.get(cacheKey)
+    if (typeof computedValue === 'undefined') {
+      computedValue = fn.apply(this, args)
+      cache.set(cacheKey, computedValue)
+    }
+  
+    return computedValue
+}
+
+function assemble (fn, context, strategy, cache, serialize) {
+    return strategy.bind(
+      context,
+      fn,
+      cache,
+      serialize
+    )
+}
+
 export default function memoize(fn){
-    return fastMemoize(fn, {serializer: new Serializer()})
+    return fastMemoize(fn, {
+        serializer: new Serializer(),
+        strategy: function strategyDefault (fn, options) {
+            var strategy = fn.length === 1 ? monadic : variadic
+          
+            return assemble(
+              fn,
+              this,
+              strategy,
+              options.cache.create(),
+              options.serializer
+            )
+        }
+    })
 }
