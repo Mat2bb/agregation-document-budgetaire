@@ -1,5 +1,5 @@
 import {h, render} from 'preact'
-import {csv, xml, text} from 'd3-fetch';
+import {csv, xml} from 'd3-fetch';
 
 import xmlDocumentToDocumentBudgetaire from '../finance/xmlDocumentToDocumentBudgetaire.js'
 import makeNatureToChapitreFI from '../finance/makeNatureToChapitreFI.js'

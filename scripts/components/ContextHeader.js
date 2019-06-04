@@ -19,7 +19,7 @@ function DocumentBudgetaireInput({onNewDocumentBudgetaireText}){
     `
 }
 
-export default function({documentBudgetairesWithPlanDeCompte, onNewDocumentBudgetaireText, errors}){
+export default function({documentBudgetairesWithPlanDeCompte, selected, onNewDocumentBudgetaireText, onSelectDocumentBudgetaire, errors}){
 
     return html`
         <header>
@@ -33,11 +33,11 @@ export default function({documentBudgetairesWithPlanDeCompte, onNewDocumentBudge
                                     ${
                                         documentBudgetairesWithPlanDeCompte.length === 0 ? 
                                             ' (aucun)' : 
-                                            html`<ul>
+                                            html`<ul class="documents-budgetaires">
                                                 ${
-                                                    documentBudgetairesWithPlanDeCompte.map(({documentBudgetaire}) => 
-                                                        html`<li>
-                                                            ${documentBudgetaire["LibelleColl"]} - (${documentBudgetaire["Nomenclature"]}) - <strong>${documentBudgetaire["Exer"]}</strong>
+                                                    documentBudgetairesWithPlanDeCompte.map(dbwpc => 
+                                                        html`<li class="${selected === dbwpc ? 'selected' : ''}" onClick=${e => onSelectDocumentBudgetaire(dbwpc)}>
+                                                            ${dbwpc.documentBudgetaire["LibelleColl"]} - (${dbwpc.documentBudgetaire["Nomenclature"]}) - <strong>${dbwpc.documentBudgetaire["Exer"]}</strong>
                                                         </li>`
                                                     )
                                                 }

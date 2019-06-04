@@ -8,8 +8,8 @@ import {AggregationDescriptionToJSON} from '../finance/AggregationDataStructures
 import {ASYNC_STATUS, STATUS_VALUE, STATUS_ERROR} from '../asyncStatusHelpers.js';
 import _actions from '../actions'
 
-function mapStateToProps({aggregationDescription, testedDocumentBudgetaireWithPlanDeCompte = {}, documentBudgetairesWithPlanDeCompte, millerColumnSelection}){
-    const {documentBudgetaire, planDeCompte} = testedDocumentBudgetaireWithPlanDeCompte;
+function mapStateToProps({aggregationDescription, selectedDocumentBudgetaireWithPlanDeCompte = {}, documentBudgetairesWithPlanDeCompte, millerColumnSelection}){
+    const {documentBudgetaire, planDeCompte} = selectedDocumentBudgetaireWithPlanDeCompte;
 
     return {
         aggregationDescription,
@@ -30,11 +30,7 @@ function mapStateToProps({aggregationDescription, testedDocumentBudgetaireWithPl
 export default function({store}){
     const actions =_actions(store);
 
-    const {testedDocumentBudgetaireWithPlanDeCompte = {}, aggregationDescription, documentBudgetairesWithPlanDeCompte} = store.state;
-    const {documentBudgetaire} = testedDocumentBudgetaireWithPlanDeCompte;
-    const docBudg = documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? 
-        documentBudgetaire : 
-        undefined
+    const {selectedDocumentBudgetaireWithPlanDeCompte = {}, aggregationDescription, documentBudgetairesWithPlanDeCompte} = store.state;
 
     const props = Object.assign(
         {},
@@ -76,7 +72,7 @@ export default function({store}){
 
     return html`
         <main>
-            <${ContextHeader} documentBudgetairesWithPlanDeCompte=${documentBudgetairesWithPlanDeCompte} onNewDocumentBudgetaireText=${actions.onNewDocumentBudgetaireText} errors=${errors}/> 
+            <${ContextHeader} documentBudgetairesWithPlanDeCompte=${documentBudgetairesWithPlanDeCompte} selected=${selectedDocumentBudgetaireWithPlanDeCompte} errors=${errors} onNewDocumentBudgetaireText=${actions.onNewDocumentBudgetaireText} onSelectDocumentBudgetaire=${store.mutations.selectedDocumentBudgetaireWithPlanDeCompte.set}/> 
             <${Aggregation} ...${props}/>
         </main>
     `

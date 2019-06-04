@@ -8,7 +8,7 @@ export default new Store({
     state: {
         millerColumnSelection: [],
         aggregationDescription: undefined,
-        testedDocumentBudgetaireWithPlanDeCompte: undefined,
+        selectedDocumentBudgetaireWithPlanDeCompte: undefined,
         documentBudgetairesWithPlanDeCompte: []
     },
     mutations: {
@@ -103,7 +103,7 @@ export default new Store({
                             return Exer2 - Exer1 
                         })
 
-                        draft.testedDocumentBudgetaireWithPlanDeCompte = draft.documentBudgetairesWithPlanDeCompte[0]
+                        draft.selectedDocumentBudgetaireWithPlanDeCompte = draft.documentBudgetairesWithPlanDeCompte[0]
                     })
                     
                 }
@@ -137,12 +137,10 @@ export default new Store({
                 }
             }
         },
-        testedDocumentBudgetaireWithPlanDeCompte: {
-            set(state, docBudg){
+        selectedDocumentBudgetaireWithPlanDeCompte: {
+            set(state, dbwpc){
                 return produce(state, draft => {
-                    draft.testedDocumentBudgetaireWithPlanDeCompte = draft.documentBudgetairesWithPlanDeCompte.find(
-                        ({documentBudgetaire}) => original(documentBudgetaire) === docBudg
-                    )
+                    draft.selectedDocumentBudgetaireWithPlanDeCompte = dbwpc
                 })
             }
         }
