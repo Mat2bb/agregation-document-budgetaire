@@ -14,24 +14,18 @@ export default function(store){
 
     return {
         onNewDocumentBudgetaireText(fileText){
-            const stateDocBudgIndex = 0;// store.state.documentBudgetairesWithPlanDeCompte.length
-
             const docBudgP = Promise.resolve()
             .then(() => (new DOMParser()).parseFromString(fileText, "text/xml"))
             .then(xmlDocumentToDocumentBudgetaire);
+            
+            store.mutations.documentBudgetaires.add.setPending(docBudgP)
 
             docBudgP
             .then(docBudg => {
-                store.mutations.documentBudgetaires.add.setValue(stateDocBudgIndex, docBudg)
-
-                if(stateDocBudgIndex === 0){
-                    store.mutations.testedDocumentBudgetaireWithPlanDeCompte.set(docBudg)
-                }
+                store.mutations.documentBudgetaires.add.setValue(docBudgP, docBudg)
             })
-            
-            store.mutations.documentBudgetaires.add.setPending(stateDocBudgIndex, docBudgP)
 
-            docBudgP.catch(err => store.mutations.documentBudgetaires.add.setError(stateDocBudgIndex, err))
+            docBudgP.catch(err => store.mutations.documentBudgetaires.add.setError(docBudgP, err))
 
             docBudgP
             .then(docBudg => {

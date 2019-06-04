@@ -3,7 +3,6 @@ import {csv, xml, text} from 'd3-fetch';
 
 import xmlDocumentToDocumentBudgetaire from '../finance/xmlDocumentToDocumentBudgetaire.js'
 import makeNatureToChapitreFI from '../finance/makeNatureToChapitreFI.js'
-import _actions from '../actions'
 
 import Main from '../components/Main.js'
 
@@ -13,7 +12,6 @@ import { getStoredState, saveState } from '../stateStorage.js'
 
 //import montreuilCVSToAggregationFormulas from '../montreuilCVSToAggregationFormulas.js'
 
-const actions =_actions(store);
 
 // initialize store
 store.mutations.aggregationDescription.set({
@@ -56,11 +54,6 @@ if(isMontreuil){
 	})
 }
 else{
-	// Download and transform some Compte Administratif
-	text('./data/CA/CA2017BPAL.xml')
-		.then(actions.onNewDocumentBudgetaireText)
-		.catch(console.error)
-
 	// load stored aggregation description
 	const storedAggregationDescription = getStoredState()
 
@@ -68,7 +61,6 @@ else{
 		console.log('storedAggregationDescription', storedAggregationDescription)
 		store.mutations.aggregationDescription.set(storedAggregationDescription)
 	}
-
 }
 
 // UI render

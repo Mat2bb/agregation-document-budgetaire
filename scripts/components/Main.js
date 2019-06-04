@@ -30,7 +30,7 @@ function mapStateToProps({aggregationDescription, testedDocumentBudgetaireWithPl
 export default function({store}){
     const actions =_actions(store);
 
-    const {testedDocumentBudgetaireWithPlanDeCompte = {}, aggregationDescription} = store.state;
+    const {testedDocumentBudgetaireWithPlanDeCompte = {}, aggregationDescription, documentBudgetairesWithPlanDeCompte} = store.state;
     const {documentBudgetaire} = testedDocumentBudgetaireWithPlanDeCompte;
     const docBudg = documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE ? 
         documentBudgetaire : 
@@ -76,7 +76,7 @@ export default function({store}){
 
     return html`
         <main>
-            <${ContextHeader} documentBudgetaire=${docBudg} onNewDocumentBudgetaireText=${actions.onNewDocumentBudgetaireText} errors=${errors}/> 
+            <${ContextHeader} documentBudgetairesWithPlanDeCompte=${documentBudgetairesWithPlanDeCompte} onNewDocumentBudgetaireText=${actions.onNewDocumentBudgetaireText} errors=${errors}/> 
             <${Aggregation} ...${props}/>
         </main>
     `

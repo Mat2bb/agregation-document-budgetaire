@@ -68,23 +68,44 @@ export default new Store({
         },
         documentBudgetaires: {
             add: {
-                setPending(state, i, pendingValue){
-                    pendingValue[ASYNC_STATUS] = STATUS_PENDING;
-                    state.documentBudgetairesWithPlanDeCompte[i] = {
-                        documentBudgetaire: pendingValue
-                    }
+                setPending(state, pendingValue){
+
+                    return produce(state, draft => {
+                        pendingValue[ASYNC_STATUS] = STATUS_PENDING;
+
+                        draft.documentBudgetairesWithPlanDeCompte.push({
+                            documentBudgetaire: pendingValue
+                        })
+                    })
                 },
-                setError(state, i, error){
-                    error[ASYNC_STATUS] = STATUS_ERROR;
-                    state.documentBudgetairesWithPlanDeCompte[i] = {
-                        documentBudgetaire: error
-                    }
+                setError(state, pendingValue, error){
+                    return produce(state, draft => {
+                        error[ASYNC_STATUS] = STATUS_ERROR;
+                        const index = draft.documentBudgetairesWithPlanDeCompte.findIndex(({documentBudgetaire}) => documentBudgetaire === pendingValue)
+                        draft.documentBudgetairesWithPlanDeCompte[index] = {
+                            documentBudgetaire: error
+                        }
+                    })
                 },
-                setValue(state, i, value){
+                setValue(state, pendingValue, value){
                     value[ASYNC_STATUS] = STATUS_VALUE;
-                    state.documentBudgetairesWithPlanDeCompte[i] = {
-                        documentBudgetaire: value
-                    }
+
+                    return produce(state, draft => {
+                        const index = draft.documentBudgetairesWithPlanDeCompte.findIndex(({documentBudgetaire}) => documentBudgetaire === pendingValue)
+                        draft.documentBudgetairesWithPlanDeCompte[index] = {
+                            documentBudgetaire: value
+                        }
+    
+                        draft.documentBudgetairesWithPlanDeCompte = draft.documentBudgetairesWithPlanDeCompte.sort((dbwpc1, dbwpc2) => {
+                            const {documentBudgetaire: {Exer: Exer1}} = dbwpc1
+                            const {documentBudgetaire: {Exer: Exer2}} = dbwpc2
+    
+                            return Exer2 - Exer1 
+                        })
+
+                        draft.testedDocumentBudgetaireWithPlanDeCompte = draft.documentBudgetairesWithPlanDeCompte[0]
+                    })
+                    
                 }
             },
             planDeCompte: {
@@ -98,21 +119,21 @@ export default new Store({
                 },
                 setError(state, docBudg, error){
                     error[ASYNC_STATUS] = STATUS_ERROR;
-                    
+
                     const dbwpdc = state.documentBudgetairesWithPlanDeCompte.find(
                         ({documentBudgetaire}) => documentBudgetaire === docBudg
                     )
                     
                     dbwpdc.planDeCompte = error;
                 },
-                setValue(state, docBudg, value){
-                    value[ASYNC_STATUS] = STATUS_VALUE;
+                setValue(state, docBudg, planDeCompte){
+                    planDeCompte[ASYNC_STATUS] = STATUS_VALUE;
                     
                     const dbwpdc = state.documentBudgetairesWithPlanDeCompte.find(
                         ({documentBudgetaire}) => documentBudgetaire === docBudg
                     )
                     
-                    dbwpdc.planDeCompte = value;
+                    dbwpdc.planDeCompte = planDeCompte;
                 }
             }
         },
