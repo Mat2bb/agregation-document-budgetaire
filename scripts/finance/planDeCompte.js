@@ -31,6 +31,10 @@ export function fromXMLDocument(pc){
 
             return FIByChapitreCode.get(chapitreCode)
         },
+        ligneBudgetChapitre({CodRD, Nature}){
+            const chapitreCodeByNature = CodRD === 'R' ? chapitreCodeByNatureR : chapitreCodeByNatureD;
+            return chapitreCodeByNature.get(Nature);
+        },
         ligneBudgetIsInChapitre({CodRD, Nature}, chapitre){
             const chapitreCodeByNature = CodRD === 'R' ? chapitreCodeByNatureR : chapitreCodeByNatureD;
             const chapitreCode = chapitreCodeByNature.get(Nature);
