@@ -63,57 +63,89 @@ export default class AggregationAnalysis extends Component{
             return undefined;
         }
 
-        const aggregatedDocumentBudgetaires = documentBudgetairesWithPlanDeCompte.map(
-            ({documentBudgetaire, planDeCompte}) => makeAggregateFunction(aggregationDescription, planDeCompte)(documentBudgetaire)
+        const analyzedDocBudgs = documentBudgetairesWithPlanDeCompte.map(
+            ({documentBudgetaire, planDeCompte}) => {
+                const aggregated = makeAggregateFunction(aggregationDescription, planDeCompte)(documentBudgetaire);
+
+                return {
+                    documentBudgetaire,
+                    planDeCompte,
+                    unusedRows: makeUnusedLigneBudgetSet(documentBudgetaire, aggregated),
+                    rowsUsedMoreThanOnce: makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregated)
+                }
+            }
         )
     
-        const {documentBudgetaire, planDeCompte} = documentBudgetairesWithPlanDeCompte[0];
-        const aggregatedDocumentBudgetaire = aggregatedDocumentBudgetaires[0];
-    
-        const unusedRows = documentBudgetaire ?
-            makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) : 
-            [];
-        const rowsUsedMoreThanOnce = documentBudgetaire ?
-            makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) : 
-            [];
-    
         return html`
-            <section>
+            <section class="analysis">
                 <h1>Analyse</h1>
-                <p>Il y a ${documentBudgetaire && documentBudgetaire.rows.size} lignes dans le document budgetaire</p>
+                ${
+                    analyzedDocBudgs.map(({documentBudgetaire}) => {
+                        return html`<p>
+                            Il y a ${documentBudgetaire && documentBudgetaire.rows.size} lignes dans le document budgetaire ${documentBudgetaire["LibelleColl"]} - <strong>${documentBudgetaire["Exer"]}</strong>
+                        </p>`
+                    })
+
+                }
+                
     
-                <h2>Lignes non-utilisées (${unusedRows.length})</h2>
-                <table>
-                    ${
-                        unusedRows.map(row => {
-                            return html`
-                                <tr>
-                                    <td>${row["CodRD"]}${planDeCompte.ligneBudgetFI(row)}</td>
-                                    <td>F${row["Fonction"]}</td>
-                                    <td>C${row["Chapitre"]}</td>
-                                    <td>N${row["Nature"]}</td>
-                                    <td class="money-amount">${row["MtReal"].toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}</td>
-                                </tr>
-                            `
-                        })
-                    }
-                </table>
-    
-                <h2>Lignes utilisées plus qu'une fois (${rowsUsedMoreThanOnce.length})</h2>
-                <table>
-                    ${
-                        rowsUsedMoreThanOnce.map(({row, aggregationSets}) => {
-                            return html`
-                                <tr>
-                                    <td>${row["CodRD"]}${planDeCompte.ligneBudgetFI(row)} F${row["Fonction"]} C${row["Chapitre"]} N${row["Nature"]}</td>
-                                    <td>${
-                                        aggregationSets.map(({name}) => name).join(' & ')
-                                    }</td>
-                                </tr>
-                            `
-                        })
-                    }
-                </table>
+                <h2>Lignes non-utilisées</h2>
+                ${
+                    analyzedDocBudgs.map(({documentBudgetaire, planDeCompte, unusedRows}) => {
+                        return html`
+                            <details>
+                                <summary>
+                                    <h3>
+                                        ${documentBudgetaire["LibelleColl"]} - <strong>${documentBudgetaire["Exer"]}</strong> (${unusedRows.length})
+                                    </h3>
+                                </summary>
+                                <table>
+                                    ${
+                                        unusedRows.map(row => {
+                                            return html`
+                                                <tr>
+                                                    <td>${row["CodRD"]}${planDeCompte.ligneBudgetFI(row)}</td>
+                                                    <td>F${row["Fonction"]}</td>
+                                                    <td>Ch${planDeCompte.ligneBudgetChapitre(row)}</td>
+                                                    <td>C${row["Nature"]}</td>
+                                                    <td class="money-amount">${row["MtReal"].toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'})}</td>
+                                                </tr>
+                                            `
+                                        })
+                                    }
+                                </table>
+                            </details>`
+                    })
+                }
+
+                <h2>Lignes utilisées plus qu'une fois</h2>
+                ${
+                    analyzedDocBudgs.map(({documentBudgetaire, planDeCompte, rowsUsedMoreThanOnce}) => {
+                        return html`
+                            <details>
+                                <summary>
+                                    <h3>
+                                        ${documentBudgetaire["LibelleColl"]} - <strong>${documentBudgetaire["Exer"]}</strong> (${rowsUsedMoreThanOnce.length})
+                                    </h3>
+                                </summary>
+                                <table>
+                                    ${
+                                        rowsUsedMoreThanOnce.map(({row, aggregationSets}) => {
+                                            return html`
+                                                <tr>
+                                                    <td>${row["CodRD"]}${planDeCompte.ligneBudgetFI(row)} F${row["Fonction"]} Ch${planDeCompte.ligneBudgetChapitre(row)} C${row["Nature"]}</td>
+                                                    <td>${
+                                                        aggregationSets.map(({name}) => name).join(' & ')
+                                                    }</td>
+                                                </tr>
+                                            `
+                                        })
+                                    }
+                                </table>
+                            </details>`
+                    })
+                }
+                
     
     
             </section>
@@ -121,3 +153,9 @@ export default class AggregationAnalysis extends Component{
     }
 }
 
+/*
+
+                
+    
+                
+*/
