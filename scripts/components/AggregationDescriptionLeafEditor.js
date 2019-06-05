@@ -66,7 +66,12 @@ class FormulaEditor extends Component {
                 </div>
                 <div class="buttons">
                     ${
-                        [{add:'F', legend: 'F(onction)'}, {add:'C', legend: 'C(compte)'}, {add:'Ch', legend: 'Ch(apitre)'}]
+                        [
+                            {add:'F', legend: 'F(onction)'}, 
+                            {add:'C', legend: 'C(compte)'}, 
+                            {add:'Ch', legend: 'Ch(apitre)'}, 
+                            {add:'Ann', legend: 'Ann(ée)'}
+                        ]
                         .map(({add, legend}) => html`<button data-add="${add}" onClick=${this.buttonClick}>${legend}</button>`)
                     }
                 </div>
