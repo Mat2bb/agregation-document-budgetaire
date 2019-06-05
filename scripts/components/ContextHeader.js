@@ -1,29 +1,25 @@
 import {h} from 'preact'
 
-function DocumentBudgetaireInput({errorMessage, onNewDocumentBudgetaireText}){
+function DocumentBudgetaireInput({onNewDocumentBudgetaireText}){
 
     function onChange(e){
-        const file = e.target.files[0];
-        if (file) {
+        for(const file of e.target.files){
             const reader = new FileReader();
             reader.readAsText(file, "UTF-8");
             reader.onload = e => onNewDocumentBudgetaireText(e.target.result);
             // MISSING error case
         }
-        else{
-            // MISSING handle no-file case
-        }
     }
 
     return html`
         <label>
-            Changer de Document Budgétaire <strong>(uniquement M52 2016, 2017 ou 2018)</strong>
-            <input type="file" onChange=${onChange} />
+            Charger un ou plusieurs <a target="_blank" href="https://github.com/DavidBruant/colors-of-the-finances/blob/master/docs/format-fichier.md">Document Budgetaire (format xml)</a>
+            <input type="file" multiple onChange=${onChange} />
         </label>
     `
 }
 
-export default function({documentBudgetaire, onNewDocumentBudgetaireText, errors}){
+export default function({documentBudgetairesWithPlanDeCompte, selected, onNewDocumentBudgetaireText, onSelectDocumentBudgetaire, errors}){
 
     return html`
         <header>
@@ -33,12 +29,20 @@ export default function({documentBudgetaire, onNewDocumentBudgetaireText, errors
                 ${
                         html`
                             <div>
-                                Document budgétaire chargé : 
-                                ${
-                                    documentBudgetaire ? 
-                                        ` ${documentBudgetaire["LibelleColl"]} - ${documentBudgetaire["Nomenclature"]} - ${documentBudgetaire["Exer"]}` : 
-                                        ' (aucun)'
-                                }
+                                Documents budgétaires chargés : 
+                                    ${
+                                        documentBudgetairesWithPlanDeCompte.length === 0 ? 
+                                            ' (aucun)' : 
+                                            html`<ul class="documents-budgetaires">
+                                                ${
+                                                    documentBudgetairesWithPlanDeCompte.map(dbwpc => 
+                                                        html`<li class="${selected === dbwpc ? 'selected' : ''}" onClick=${e => onSelectDocumentBudgetaire(dbwpc)}>
+                                                            ${dbwpc.documentBudgetaire["LibelleColl"]} - (${dbwpc.documentBudgetaire["Nomenclature"]}) - <strong>${dbwpc.documentBudgetaire["Exer"]}</strong>
+                                                        </li>`
+                                                    )
+                                                }
+                                            </ul>`
+                                    }
                             </div>
                         `
                 }

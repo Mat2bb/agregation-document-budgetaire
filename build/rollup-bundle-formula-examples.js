@@ -245,7 +245,7 @@ function Serializer() {
               next++;
             }
 
-            return id;
+            return id.toString(36);
           }
 
         default:
@@ -1435,15 +1435,21 @@ function fromXMLDocument(pc) {
       var chapitreCode = chapitreCodeByNature.get(Nature);
       return FIByChapitreCode.get(chapitreCode);
     },
-    ligneBudgetIsInChapitre: function ligneBudgetIsInChapitre(_ref2, chapitre) {
+    ligneBudgetChapitre: function ligneBudgetChapitre(_ref2) {
       var CodRD = _ref2.CodRD,
           Nature = _ref2.Nature;
+      var chapitreCodeByNature = CodRD === 'R' ? chapitreCodeByNatureR : chapitreCodeByNatureD;
+      return chapitreCodeByNature.get(Nature);
+    },
+    ligneBudgetIsInChapitre: function ligneBudgetIsInChapitre(_ref3, chapitre) {
+      var CodRD = _ref3.CodRD,
+          Nature = _ref3.Nature;
       var chapitreCodeByNature = CodRD === 'R' ? chapitreCodeByNatureR : chapitreCodeByNatureD;
       var chapitreCode = chapitreCodeByNature.get(Nature);
       return chapitreCode === chapitre;
     },
-    ligneBudgetIsInCompte: function ligneBudgetIsInCompte(_ref3, compte) {
-      var Nature = _ref3.Nature;
+    ligneBudgetIsInCompte: function ligneBudgetIsInCompte(_ref4, compte) {
+      var Nature = _ref4.Nature;
       var compteElement = Nomenclature.querySelector("Compte[Code=\"".concat(Nature, "\"]"));
       if (!compteElement) // compte does not exist for this nature
         return false; // look up to see if the compte is a parent of the LigneBudget's Nature
@@ -1461,8 +1467,8 @@ function fromXMLDocument(pc) {
 
       return false;
     },
-    ligneBudgetIsInFonction: function ligneBudgetIsInFonction(_ref4, fonction) {
-      var Fonction = _ref4.Fonction;
+    ligneBudgetIsInFonction: function ligneBudgetIsInFonction(_ref5, fonction) {
+      var Fonction = _ref5.Fonction;
       var fonctionElement = Nomenclature.querySelector("RefFonctionnelles RefFonc[Code=\"".concat(Fonction, "\"]"));
       if (!fonctionElement) // compte does not exist for this nature
         return false; // look up to see if the compte is a parent of the LigneBudget's Nature
