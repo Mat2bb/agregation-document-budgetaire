@@ -246,7 +246,7 @@ class MillerColumns extends Component {
                                 planDeCompte=${planDeCompte}
                                 onFormulaChange=${formula => editChildByLevel[i](
                                     descriptionNode, 
-                                    {id: descriptionNode.id, name: descriptionNode.name, formula}, 
+                                    Object.assign( {}, descriptionNode, {formula} ),
                                     []
                                 )}
                             />`

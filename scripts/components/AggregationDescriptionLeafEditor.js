@@ -75,7 +75,7 @@ class FormulaEditor extends Component {
                         .map(({add, legend}) => html`<button data-add="${add}" onClick=${this.buttonClick}>${legend}</button>`)
                     }
                 </div>
-                <input type="text" defaultValue=${formula} ref=${this.setTextInputRef} onInput=${this.handleChange} />  
+                <textarea autocomplete="off" spellcheck=${false} rows="2" defaultValue=${formula} ref=${this.setTextInputRef} onInput=${this.handleChange} />
             </section>
         `
     }
