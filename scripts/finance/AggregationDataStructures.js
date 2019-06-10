@@ -23,19 +23,20 @@ interface AggregationDescriptionLeaf extends AggregationDescriptionNode, Readonl
 */
 
 export function AggregationDescriptionToJSON(aggregationDescription){
-    const {id, name, formula, children} = aggregationDescription
+    const {id, name, useInAnalysis, formula, children} = aggregationDescription
 
     return children ?
-        { id, name, children : Object.values(children).map(AggregationDescriptionToJSON) } :
-        { id, name, formula } ;
+        { id, name, useInAnalysis, children : Object.values(children).map(AggregationDescriptionToJSON) } :
+        { id, name, useInAnalysis, formula } ;
 }
 
 export function AggregationDescriptionFromJSON(aggregationDescriptionJSON){
-    const {id, name, formula, children} = aggregationDescriptionJSON
+    // In older versions, useInAnalysis didn't exist. Setting to true as default value
+    const {id, name, useInAnalysis = true, formula, children} = aggregationDescriptionJSON
 
     return children ?
-        { id, name, children: Object.fromEntries(children.map(c => [c.id, AggregationDescriptionFromJSON(c)])) } :
-        { id, name, formula } ;
+        { id, name, useInAnalysis, children: Object.fromEntries(children.map(c => [c.id, AggregationDescriptionFromJSON(c)])) } :
+        { id, name, useInAnalysis, formula } ;
 }
 
 
@@ -65,10 +66,14 @@ interface AggregateMaker {
 
 */
 
-export function getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire){
-    return aggregatedDocumentBudgetaire.children ?
-        Object.values(aggregatedDocumentBudgetaire.children).map(getAggregatedDocumentBudgetaireLeaves).flat() :
-        aggregatedDocumentBudgetaire
+export function getAggregatedDocumentBudgetaireLeavesToAnalyze(aggregatedDocumentBudgetaire, aggregationDescription){
+    return aggregationDescription.useInAnalysis ?
+        (aggregatedDocumentBudgetaire.children ?
+            Object.values(aggregatedDocumentBudgetaire.children)
+                .map(child => getAggregatedDocumentBudgetaireLeavesToAnalyze(child, aggregationDescription.children[child.id]))
+                .flat() :
+            aggregatedDocumentBudgetaire) :
+        []
 }
 
 /*
