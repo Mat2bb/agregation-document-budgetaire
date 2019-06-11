@@ -2717,32 +2717,40 @@ interface AggregationDescriptionLeaf extends AggregationDescriptionNode, Readonl
 function AggregationDescriptionToJSON(aggregationDescription) {
   var id = aggregationDescription.id,
       name = aggregationDescription.name,
+      useInAnalysis = aggregationDescription.useInAnalysis,
       formula = aggregationDescription.formula,
       children = aggregationDescription.children;
   return children ? {
     id: id,
     name: name,
+    useInAnalysis: useInAnalysis,
     children: Object.values(children).map(AggregationDescriptionToJSON)
   } : {
     id: id,
     name: name,
+    useInAnalysis: useInAnalysis,
     formula: formula
   };
 }
 function AggregationDescriptionFromJSON(aggregationDescriptionJSON) {
+  // In older versions, useInAnalysis didn't exist. Setting to true as default value
   var id = aggregationDescriptionJSON.id,
       name = aggregationDescriptionJSON.name,
+      _aggregationDescripti = aggregationDescriptionJSON.useInAnalysis,
+      useInAnalysis = _aggregationDescripti === void 0 ? true : _aggregationDescripti,
       formula = aggregationDescriptionJSON.formula,
       children = aggregationDescriptionJSON.children;
   return children ? {
     id: id,
     name: name,
+    useInAnalysis: useInAnalysis,
     children: Object.fromEntries(children.map(function (c) {
       return [c.id, AggregationDescriptionFromJSON(c)];
     }))
   } : {
     id: id,
     name: name,
+    useInAnalysis: useInAnalysis,
     formula: formula
   };
 }
@@ -2772,8 +2780,10 @@ interface AggregateMaker {
 
 */
 
-function getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire) {
-  return aggregatedDocumentBudgetaire.children ? Object.values(aggregatedDocumentBudgetaire.children).map(getAggregatedDocumentBudgetaireLeaves).flat() : aggregatedDocumentBudgetaire;
+function getAggregatedDocumentBudgetaireLeavesToAnalyze(aggregatedDocumentBudgetaire, aggregationDescription) {
+  return aggregationDescription.useInAnalysis ? aggregatedDocumentBudgetaire.children ? Object.values(aggregatedDocumentBudgetaire.children).map(function (child) {
+    return getAggregatedDocumentBudgetaireLeavesToAnalyze(child, aggregationDescription.children[child.id]);
+  }).flat() : aggregatedDocumentBudgetaire : [];
 }
 /*
     Function to compute the LigneBudget elements of a given node in the AggregatedDocumentBudgetaire tree
@@ -2849,8 +2859,8 @@ function rawAggregatedDocumentBudgetaireNodeTotal(node) {
 
 var aggregatedDocumentBudgetaireNodeTotal = memoize$1(rawAggregatedDocumentBudgetaireNodeTotal);
 
-function makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) {
-  var leaves = getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire);
+function makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire, aggregationDescription) {
+  var leaves = getAggregatedDocumentBudgetaireLeavesToAnalyze(aggregatedDocumentBudgetaire, aggregationDescription);
   var usedLigneBudgets = new Set();
   var _iteratorNormalCompletion = true;
   var _didIteratorError = false;
@@ -2903,8 +2913,8 @@ function makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetai
   });
 }
 
-function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire) {
-  var leaves = getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire);
+function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire, aggregationDescription) {
+  var leaves = getAggregatedDocumentBudgetaireLeavesToAnalyze(aggregatedDocumentBudgetaire, aggregationDescription);
   var aggregationSetsByRow = new Map();
   var _iteratorNormalCompletion3 = true;
   var _didIteratorError3 = false;
@@ -3016,8 +3026,8 @@ function (_Component) {
         return {
           documentBudgetaire: documentBudgetaire,
           planDeCompte: planDeCompte,
-          unusedRows: makeUnusedLigneBudgetSet(documentBudgetaire, aggregated),
-          rowsUsedMoreThanOnce: makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregated)
+          unusedRows: makeUnusedLigneBudgetSet(documentBudgetaire, aggregated, aggregationDescription),
+          rowsUsedMoreThanOnce: makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregated, aggregationDescription)
         };
       });
       return h("section", {
@@ -4263,9 +4273,6 @@ function (_Component) {
     _classCallCheck(this, FormulaEditor);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(FormulaEditor).call(this, props));
-    _this.state = {
-      value: props.formula
-    };
     var onFormulaChange = props.onFormulaChange;
     _this.inputElement = undefined;
 
@@ -4275,29 +4282,27 @@ function (_Component) {
 
     _this.focusTextInput = function () {
       // Focus the text input using the raw DOM API
-      if (_this.inputElement) _this.inputElement.focus();
+      if (_this.inputElement) {
+        _this.inputElement.focus();
+      }
     };
 
     _this.handleChange = function (e) {
       var value = e.target.value;
-
-      _this.setState({
-        value: value
-      });
-
       onFormulaChange(value);
     };
 
     _this.buttonClick = function (e) {
-      var value = _this.state.value + e.target.getAttribute('data-add');
+      var cursorPosition = _this.inputElement.selectionStart;
+      var currentValue = _this.inputElement.value;
+      var newValue = currentValue.slice(0, cursorPosition) + e.target.getAttribute('data-add') + currentValue.slice(cursorPosition);
+      _this.inputElement.value = newValue;
+      onFormulaChange(newValue);
+      var newPosition = cursorPosition + e.target.getAttribute('data-add').length;
 
-      _this.setState({
-        value: value
-      });
+      _this.inputElement.focus();
 
-      onFormulaChange(value);
-
-      _this.focusTextInput();
+      _this.inputElement.setSelectionRange(newPosition, newPosition);
     };
 
     return _this;
@@ -4311,10 +4316,10 @@ function (_Component) {
     }
   }, {
     key: "render",
-    value: function render(props, _ref) {
+    value: function render(_ref) {
       var _this2 = this;
 
-      var value = _ref.value;
+      var formula = _ref.formula;
       // RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)
       return h("section", {
         class: "formula-editor"
@@ -4365,6 +4370,9 @@ function (_Component) {
       }, {
         add: 'Ch',
         legend: 'Ch(apitre)'
+      }, {
+        add: 'Ann',
+        legend: 'Ann(ée)'
       }].map(function (_ref4) {
         var add = _ref4.add,
             legend = _ref4.legend;
@@ -4372,9 +4380,11 @@ function (_Component) {
           "data-add": add,
           onClick: _this2.buttonClick
         }, legend);
-      })), h("input", {
-        type: "text",
-        value: value,
+      })), h("textarea", {
+        autocomplete: "off",
+        spellcheck: false,
+        rows: "2",
+        defaultValue: formula,
         ref: this.setTextInputRef,
         onInput: this.handleChange
       }));
@@ -4454,14 +4464,15 @@ function (_Component) {
           removeChild = _ref.removeChild,
           onNodeSelection = _ref.onNodeSelection,
           selectedChildId = _ref.selectedChildId,
-          isLast = _ref.isLast;
+          isLast = _ref.isLast,
+          parentUseInAnalysis = _ref.parentUseInAnalysis;
       var adding = _ref2.adding,
           editingNode = _ref2.editingNode;
       return h("ol", null, Object.values(aggregationDescription.children).map(function (node) {
         var isSelected = node.id === selectedChildId;
         return !editingNode || editingNode.id !== node.id ? h("li", {
           key: node.id,
-          class: [isSelected ? 'selected' : undefined, node.children ? 'group' : 'formula'].filter(function (x) {
+          class: [isSelected ? 'selected' : undefined, !parentUseInAnalysis || !node.useInAnalysis ? 'not-used-in-analysis' : undefined, node.children ? 'group' : 'formula'].filter(function (x) {
             return x;
           }).join(' '),
           onClick: function onClick() {
@@ -4482,10 +4493,12 @@ function (_Component) {
           var newChild = e.target.querySelector('input[name="type"]:checked').value === 'group' ? {
             id: e.target.querySelector('input[name="id"]').value,
             name: e.target.querySelector('input[name="name"]').value,
+            useInAnalysis: e.target.querySelector('input[name="use-in-analysis"]').checked,
             children: editingNode && editingNode.children || Object.create(null)
           } : {
             id: e.target.querySelector('input[name="id"]').value,
             name: e.target.querySelector('input[name="name"]').value,
+            useInAnalysis: e.target.querySelector('input[name="use-in-analysis"]').checked,
             formula: editingNode && editingNode.formula || ''
           };
 
@@ -4520,7 +4533,11 @@ function (_Component) {
         type: "radio",
         name: "type",
         value: "formula"
-      }), "Formule")), h("section", null, h("button", {
+      }), "Formule")), h("section", null, h("label", null, "Utiliser dans l'analyse", h("input", {
+        defaultChecked: editingNode ? editingNode.useInAnalysis : true,
+        type: "checkbox",
+        name: "use-in-analysis"
+      }))), h("section", null, h("button", {
         type: "submit"
       }, "ok"), h("button", {
         type: "button",
@@ -4655,7 +4672,8 @@ function (_Component2) {
         removeChild: removeChild,
         onNodeSelection: function onNodeSelection(id) {
           return setSelectionList(id ? [id] : []);
-        }
+        },
+        parentUseInAnalysis: aggregationDescription.useInAnalysis
       }), selectedList.map(function (id, i) {
         var descriptionNode = aggregationDescription;
         var aggregatedNode = aggregatedDocumentBudgetaire;
@@ -4723,17 +4741,16 @@ function (_Component2) {
           removeChild: removeChildDeep,
           onNodeSelection: function onNodeSelection(id) {
             return setSelectionList(id ? [].concat(_toConsumableArray(selectedList.slice(0, i + 1)), [id]) : selectedList.slice(0, i + 1));
-          }
+          },
+          parentUseInAnalysis: descriptionNode.useInAnalysis
         }) : h(AggregationDescriptionLeafEditor, {
           aggregationDescriptionLeaf: descriptionNode,
           aggregatedDocumentBudgetaireCorrespondingNode: aggregatedNode,
           planDeCompte: planDeCompte,
           onFormulaChange: function onFormulaChange(formula) {
-            return editChildByLevel[i](descriptionNode, {
-              id: descriptionNode.id,
-              name: descriptionNode.name,
+            return editChildByLevel[i](descriptionNode, Object.assign({}, descriptionNode, {
               formula: formula
-            }, []);
+            }), []);
           }
         });
       })));

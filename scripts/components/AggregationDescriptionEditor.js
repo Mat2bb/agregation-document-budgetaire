@@ -13,7 +13,7 @@ class MillerColumn extends Component {
         };
     }
 
-    render({aggregationDescription, addChild, editChild, removeChild, onNodeSelection, selectedChildId, isLast}, {adding, editingNode}) {
+    render({aggregationDescription, addChild, editChild, removeChild, onNodeSelection, selectedChildId, isLast, parentUseInAnalysis}, {adding, editingNode}) {
 
         return (
             html`<ol>
@@ -27,6 +27,7 @@ class MillerColumn extends Component {
                                     key=${node.id}
                                     class=${[
                                         isSelected ? 'selected' : undefined,
+                                        !parentUseInAnalysis || !node.useInAnalysis ? 'not-used-in-analysis' : undefined,
                                         node.children ? 'group' : 'formula'
                                     ].filter(x=>x).join(' ')} 
                                     onClick=${() => onNodeSelection(isSelected ? undefined : node.id)}
@@ -52,11 +53,13 @@ class MillerColumn extends Component {
                                 {
                                     id: e.target.querySelector('input[name="id"]').value,
                                     name: e.target.querySelector('input[name="name"]').value,
+                                    useInAnalysis: e.target.querySelector('input[name="use-in-analysis"]').checked,
                                     children: editingNode && editingNode.children || Object.create(null)
                                 } : 
                                 {
                                     id: e.target.querySelector('input[name="id"]').value,
                                     name: e.target.querySelector('input[name="name"]').value,
+                                    useInAnalysis: e.target.querySelector('input[name="use-in-analysis"]').checked,
                                     formula: editingNode && editingNode.formula || ''
                                 };
 
@@ -89,6 +92,12 @@ class MillerColumn extends Component {
                                     <label>
                                         <input defaultChecked=${editingNode && ('formula' in editingNode)}  type="radio" name="type" value="formula"/>
                                         Formule
+                                    </label>
+                                </section>
+                                <section>
+                                    <label>
+                                        Utiliser dans l'analyse
+                                        <input defaultChecked=${editingNode ? editingNode.useInAnalysis : true}  type="checkbox" name="use-in-analysis"/>
                                     </label>
                                 </section>
                                 <section>
@@ -172,7 +181,8 @@ class MillerColumns extends Component {
                     addChild=${addChild}
                     editChild=${(previousChild, newChild) => editChild(previousChild, newChild, [])}
                     removeChild=${removeChild}}
-                    onNodeSelection=${id => setSelectionList(id ? [id] : [])},
+                    onNodeSelection=${id => setSelectionList(id ? [id] : [])}
+                    parentUseInAnalysis=${aggregationDescription.useInAnalysis}
                 />
                 ${
                     selectedList.map((id, i) => {
@@ -228,6 +238,7 @@ class MillerColumns extends Component {
                                 )}
                                 removeChild=${ removeChildDeep }}
                                 onNodeSelection=${id => setSelectionList(id ? [...selectedList.slice(0, i+1), id] : selectedList.slice(0, i+1))},
+                                parentUseInAnalysis=${descriptionNode.useInAnalysis}
                             />` :
                             html`<${AggregationDescriptionLeafEditor} 
                                 aggregationDescriptionLeaf=${descriptionNode}
@@ -235,7 +246,7 @@ class MillerColumns extends Component {
                                 planDeCompte=${planDeCompte}
                                 onFormulaChange=${formula => editChildByLevel[i](
                                     descriptionNode, 
-                                    {id: descriptionNode.id, name: descriptionNode.name, formula}, 
+                                    Object.assign( {}, descriptionNode, {formula} ),
                                     []
                                 )}
                             />`

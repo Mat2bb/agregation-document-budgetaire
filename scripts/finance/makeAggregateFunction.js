@@ -11,12 +11,18 @@ export default memoize(function makeAggregateFunction(aggregationDescription, pl
             // non-leaf
             {
                 id, name, 
-                children: Object.values(children).map(n => aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(n, documentBudgetaire, planDeCompte))
+                children: Object.values(children)
+                    .map(n => aggregationDescriptionNodeToAggregatedDocumentBudgetaireNode(
+                        n, documentBudgetaire, planDeCompte
+                    ))
             } :
             // leaf, has .formula
             {
                 id, name, 
-                elements: new Set([...documentBudgetaire.rows].filter(makeLigneBudgetFilterFromFormula(formula, planDeCompte)))
+                elements: new Set(
+                    [...documentBudgetaire.rows]
+                        .filter(makeLigneBudgetFilterFromFormula(formula, planDeCompte))
+                )
             }
     });
 
