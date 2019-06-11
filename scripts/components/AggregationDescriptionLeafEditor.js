@@ -6,7 +6,6 @@ import {aggregatedDocumentBudgetaireNodeElements, aggregatedDocumentBudgetaireNo
 class FormulaEditor extends Component {  
     constructor(props) {
         super(props);
-        this.state = {value: props.formula};
 
         const {onFormulaChange} = props;
 
@@ -18,23 +17,28 @@ class FormulaEditor extends Component {
 
         this.focusTextInput = () => {
             // Focus the text input using the raw DOM API
-            if (this.inputElement) this.inputElement.focus();
+            if (this.inputElement){
+                this.inputElement.focus();
+            }
         };
 
         this.handleChange = e => {
             const value = e.target.value
-
-            this.setState({value})
             onFormulaChange(value)
         }
 
         this.buttonClick = e => {
-            const value = this.state.value + e.target.getAttribute('data-add');
+            const cursorPosition = this.inputElement.selectionStart;
+            const currentValue = this.inputElement.value;
+            const newValue = currentValue.slice(0, cursorPosition) + e.target.getAttribute('data-add') + currentValue.slice(cursorPosition);
 
-            this.setState({value})
-            onFormulaChange(value)
+            this.inputElement.value = newValue;
+            onFormulaChange(newValue)
 
-            this.focusTextInput()
+            const newPosition = cursorPosition + (e.target.getAttribute('data-add').length)
+
+            this.inputElement.focus()
+            this.inputElement.setSelectionRange(newPosition, newPosition);
         }
     }
 
@@ -43,7 +47,7 @@ class FormulaEditor extends Component {
         this.focusTextInput();
     }
 
-    render(props, {value}) {
+    render({formula}) {
         // RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)
 
         return html`
@@ -62,11 +66,16 @@ class FormulaEditor extends Component {
                 </div>
                 <div class="buttons">
                     ${
-                        [{add:'F', legend: 'F(onction)'}, {add:'C', legend: 'C(compte)'}, {add:'Ch', legend: 'Ch(apitre)'}]
+                        [
+                            {add:'F', legend: 'F(onction)'}, 
+                            {add:'C', legend: 'C(compte)'}, 
+                            {add:'Ch', legend: 'Ch(apitre)'}, 
+                            {add:'Ann', legend: 'Ann(ée)'}
+                        ]
                         .map(({add, legend}) => html`<button data-add="${add}" onClick=${this.buttonClick}>${legend}</button>`)
                     }
                 </div>
-                <input type="text" value=${value} ref=${this.setTextInputRef} onInput=${this.handleChange} />  
+                <textarea autocomplete="off" spellcheck=${false} rows="2" defaultValue=${formula} ref=${this.setTextInputRef} onInput=${this.handleChange} />
             </section>
         `
     }

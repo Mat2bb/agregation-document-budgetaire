@@ -2,10 +2,10 @@ import debounce from 'lodash-es/debounce';
 import {h, Component} from 'preact'
 
 import makeAggregateFunction from '../finance/makeAggregateFunction.js';
-import { getAggregatedDocumentBudgetaireLeaves } from '../finance/AggregationDataStructures.js';
+import { getAggregatedDocumentBudgetaireLeavesToAnalyze } from '../finance/AggregationDataStructures.js';
 
-function makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire){
-    const leaves = getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire)
+function makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire, aggregationDescription){
+    const leaves = getAggregatedDocumentBudgetaireLeavesToAnalyze(aggregatedDocumentBudgetaire, aggregationDescription)
     const usedLigneBudgets = new Set()
     
     for(const leaf of leaves){
@@ -17,8 +17,8 @@ function makeUnusedLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetai
     return [...documentBudgetaire.rows].filter(ligneBudget => !usedLigneBudgets.has(ligneBudget))
 }
 
-function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire){
-    const leaves = getAggregatedDocumentBudgetaireLeaves(aggregatedDocumentBudgetaire)
+function makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregatedDocumentBudgetaire, aggregationDescription){
+    const leaves = getAggregatedDocumentBudgetaireLeavesToAnalyze(aggregatedDocumentBudgetaire, aggregationDescription)
 
     const aggregationSetsByRow = new Map()
 
@@ -70,8 +70,10 @@ export default class AggregationAnalysis extends Component{
                 return {
                     documentBudgetaire,
                     planDeCompte,
-                    unusedRows: makeUnusedLigneBudgetSet(documentBudgetaire, aggregated),
-                    rowsUsedMoreThanOnce: makeUsedMoreThanOnceLigneBudgetSet(documentBudgetaire, aggregated)
+                    unusedRows: makeUnusedLigneBudgetSet(documentBudgetaire, aggregated, aggregationDescription),
+                    rowsUsedMoreThanOnce: makeUsedMoreThanOnceLigneBudgetSet(
+                        documentBudgetaire, aggregated, aggregationDescription
+                    )
                 }
             }
         )
