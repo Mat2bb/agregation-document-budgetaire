@@ -4816,8 +4816,8 @@ function Aggregation (_ref) {
       aggregationDescriptionMutations = _ref.aggregationDescriptionMutations,
       millerColumnSelection = _ref.millerColumnSelection,
       triggerAggregationDescriptionDownload = _ref.triggerAggregationDescriptionDownload,
-      importAggregationDescription = _ref.importAggregationDescription;
-  var planDeCompte = documentBudgetairesWithPlanDeCompte[0] && documentBudgetairesWithPlanDeCompte[0].planDeCompte;
+      importAggregationDescription = _ref.importAggregationDescription,
+      selectedPlanDeCompte = _ref.selectedPlanDeCompte;
   return h("div", null, h(AggregationDescriptionEditor, {
     aggregationDescription: aggregationDescription,
     aggregatedDocumentBudgetaire: aggregatedDocumentBudgetaire,
@@ -4826,7 +4826,7 @@ function Aggregation (_ref) {
     millerColumnSelection: millerColumnSelection,
     triggerAggregationDescriptionDownload: triggerAggregationDescriptionDownload,
     importAggregationDescription: importAggregationDescription,
-    planDeCompte: planDeCompte
+    planDeCompte: selectedPlanDeCompte
   }), h(AggregationAnalysis, {
     aggregationDescription: aggregationDescription,
     documentBudgetairesWithPlanDeCompte: documentBudgetairesWithPlanDeCompte
@@ -5081,6 +5081,7 @@ function mapStateToProps(_ref) {
   return {
     aggregationDescription: aggregationDescription,
     selectedList: millerColumnSelection,
+    selectedPlanDeCompte: planDeCompte,
     aggregatedDocumentBudgetaire: aggregationDescription && documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE && planDeCompte && planDeCompte[ASYNC_STATUS] === STATUS_VALUE ? makeAggregateFunction(aggregationDescription, planDeCompte)(documentBudgetaire) : undefined,
     documentBudgetairesWithPlanDeCompte: documentBudgetairesWithPlanDeCompte.filter(function (_ref2) {
       var documentBudgetaire = _ref2.documentBudgetaire,
