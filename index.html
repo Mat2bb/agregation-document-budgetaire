@@ -8,9 +8,23 @@
         
         <meta name="viewport" content="width=device-width, initial-scale=1">
         
-        <script crossorigin="anonymous" src="https://cdn.polyfill.io/v2/polyfill.min.js"></script>
         <link rel="stylesheet" href="https://unpkg.com/bootstrap@4.3.1/dist/css/bootstrap-reboot.min.css" crossorigin="anonymous">
         
+        <script crossorigin="anonymous" src="https://polyfill.io/v3/polyfill.min.js?features=default%2Ces2017%2Ces2016%2Ces2015%2Cfetch%2CArray.prototype.flat"></script>
+
+        <script>
+        'use strict'
+
+        // Object.fromEntries ponyfill since it's not on polyfill.io yet
+        // code from https://github.com/feross/fromentries/blob/master/index.js (MIT Licence)
+        if(!Object.fromEntries){
+            Object.fromEntries = function fromEntries (iterable) {
+                return [...iterable]
+                    .reduce((obj, [key, val]) => Object.assign(obj, { [key]: val }), {})
+            }
+        }
+        </script>
+
         <script defer type="module" src="./build/rollup-bundle-main.js"></script>
 
         <style>

@@ -14,6 +14,7 @@ function mapStateToProps({aggregationDescription, selectedDocumentBudgetaireWith
     return {
         aggregationDescription,
         selectedList: millerColumnSelection,
+        selectedPlanDeCompte: planDeCompte,
         aggregatedDocumentBudgetaire: aggregationDescription && 
             documentBudgetaire && documentBudgetaire[ASYNC_STATUS] === STATUS_VALUE &&
             planDeCompte && planDeCompte[ASYNC_STATUS] === STATUS_VALUE ?
