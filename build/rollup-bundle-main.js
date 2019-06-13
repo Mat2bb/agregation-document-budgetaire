@@ -4273,6 +4273,9 @@ function (_Component) {
     _classCallCheck(this, FormulaEditor);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(FormulaEditor).call(this, props));
+    _this.state = {
+      value: props.formula
+    };
     var onFormulaChange = props.onFormulaChange;
     _this.inputElement = undefined;
 
@@ -4280,47 +4283,52 @@ function (_Component) {
       _this.inputElement = element;
     };
 
-    _this.focusTextInput = function () {
-      // Focus the text input using the raw DOM API
-      if (_this.inputElement) {
-        _this.inputElement.focus();
-      }
-    };
-
     _this.handleChange = function (e) {
       var value = e.target.value;
+      _this.selectionStart = _this.inputElement.selectionStart;
+      _this.selectionEnd = _this.inputElement.selectionEnd;
       onFormulaChange(value);
     };
 
     _this.buttonClick = function (e) {
-      var cursorPosition = _this.inputElement.selectionStart;
+      var selectionStart = _this.inputElement.selectionStart;
+      var selectionEnd = _this.inputElement.selectionEnd;
       var currentValue = _this.inputElement.value;
-      var newValue = currentValue.slice(0, cursorPosition) + e.target.getAttribute('data-add') + currentValue.slice(cursorPosition);
-      _this.inputElement.value = newValue;
+      var buttonValue = e.target.getAttribute('data-add');
+      var newValue = currentValue.slice(0, selectionStart) + buttonValue + currentValue.slice(selectionStart);
+      _this.selectionStart = selectionStart + buttonValue.length;
+      _this.selectionEnd = selectionEnd + buttonValue.length;
       onFormulaChange(newValue);
-      var newPosition = cursorPosition + e.target.getAttribute('data-add').length;
-
-      _this.inputElement.focus();
-
-      _this.inputElement.setSelectionRange(newPosition, newPosition);
     };
 
     return _this;
   }
 
   _createClass(FormulaEditor, [{
+    key: "componentWillReceiveProps",
+    value: function componentWillReceiveProps(nextProps) {
+      this.setState({
+        value: nextProps.formula
+      });
+    }
+  }, {
     key: "componentDidMount",
     value: function componentDidMount() {
       // autofocus the input on mount
-      this.focusTextInput();
+      this.inputElement.focus();
+    }
+  }, {
+    key: "componentDidUpdate",
+    value: function componentDidUpdate() {
+      this.inputElement.focus();
+      this.inputElement.setSelectionRange(this.selectionStart, this.selectionEnd);
     }
   }, {
     key: "render",
-    value: function render(_ref) {
+    value: function render(props, _ref) {
       var _this2 = this;
 
-      var formula = _ref.formula;
-      // RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)
+      var formula = _ref.value;
       return h("section", {
         class: "formula-editor"
       }, h("div", {
@@ -4384,7 +4392,7 @@ function (_Component) {
         autocomplete: "off",
         spellcheck: false,
         rows: "2",
-        defaultValue: formula,
+        value: formula,
         ref: this.setTextInputRef,
         onInput: this.handleChange
       }));
