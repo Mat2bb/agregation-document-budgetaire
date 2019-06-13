@@ -1,11 +1,14 @@
 import {h, Component} from 'preact'
 
-import {aggregatedDocumentBudgetaireNodeElements, aggregatedDocumentBudgetaireNodeTotal} from '../finance/AggregationDataStructures.js'
+import {aggregatedDocumentBudgetaireNodeTotal} from '../finance/AggregationDataStructures.js'
 
 
 class FormulaEditor extends Component {  
     constructor(props) {
         super(props);
+        this.state = {
+            value: props.formula
+        }
 
         const {onFormulaChange} = props;
 
@@ -15,40 +18,44 @@ class FormulaEditor extends Component {
             this.inputElement = element;
         };
 
-        this.focusTextInput = () => {
-            // Focus the text input using the raw DOM API
-            if (this.inputElement){
-                this.inputElement.focus();
-            }
-        };
-
         this.handleChange = e => {
             const value = e.target.value
+            
+            this.selectionStart = this.inputElement.selectionStart
+            this.selectionEnd = this.inputElement.selectionEnd
+
             onFormulaChange(value)
         }
 
         this.buttonClick = e => {
-            const cursorPosition = this.inputElement.selectionStart;
+            const selectionStart = this.inputElement.selectionStart;
+            const selectionEnd = this.inputElement.selectionEnd;
             const currentValue = this.inputElement.value;
-            const newValue = currentValue.slice(0, cursorPosition) + e.target.getAttribute('data-add') + currentValue.slice(cursorPosition);
+            const buttonValue = e.target.getAttribute('data-add')
+            const newValue = currentValue.slice(0, selectionStart) + buttonValue + currentValue.slice(selectionStart);
 
-            this.inputElement.value = newValue;
+            this.selectionStart = selectionStart + (buttonValue.length)
+            this.selectionEnd = selectionEnd + (buttonValue.length)
+
             onFormulaChange(newValue)
-
-            const newPosition = cursorPosition + (e.target.getAttribute('data-add').length)
-
-            this.inputElement.focus()
-            this.inputElement.setSelectionRange(newPosition, newPosition);
         }
+    }
+
+    componentWillReceiveProps(nextProps){
+        this.setState({value: nextProps.formula})
     }
 
     componentDidMount() {
         // autofocus the input on mount
-        this.focusTextInput();
+        this.inputElement.focus();
     }
 
-    render({formula}) {
-        // RF∩(N7478141 ∪ N7478142 ∪ N74788∩F53∩Ann2016)
+    componentDidUpdate(){
+        this.inputElement.focus();
+        this.inputElement.setSelectionRange(this.selectionStart, this.selectionEnd);
+    }
+
+    render(props, {value: formula}) {
 
         return html`
             <section class="formula-editor">
@@ -75,7 +82,7 @@ class FormulaEditor extends Component {
                         .map(({add, legend}) => html`<button data-add="${add}" onClick=${this.buttonClick}>${legend}</button>`)
                     }
                 </div>
-                <textarea autocomplete="off" spellcheck=${false} rows="2" defaultValue=${formula} ref=${this.setTextInputRef} onInput=${this.handleChange} />
+                <textarea autocomplete="off" spellcheck=${false} rows="2" value=${formula} ref=${this.setTextInputRef} onInput=${this.handleChange}></textarea>
             </section>
         `
     }
