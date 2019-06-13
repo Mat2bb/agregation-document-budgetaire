@@ -3,41 +3,50 @@ import memoize from '../memoize.js'
 
 import grammar from './grammar.js'
 
-function matchesSimple(r, planDeCompte, subset) {
+function matchesSimple(r, planDeCompte, token, identifierToLigneBudgetSet) {
 
-    switch (subset) {
+    switch (token) {
         case 'R':
         case 'D':
-            return r['CodRD'] === subset;
+            return r['CodRD'] === token;
         case 'F':
         case 'I':
-            return planDeCompte.ligneBudgetFI(r) === subset;
+            return planDeCompte.ligneBudgetFI(r) === token;
         case 'RF':
         case 'RI':
         case 'DF':
         case 'DI':
-            return r['CodRD'] === subset[0] && planDeCompte.ligneBudgetFI(r) === subset[1];
+            return r['CodRD'] === token[0] && planDeCompte.ligneBudgetFI(r) === token[1];
     }
 
-    if (subset.startsWith('Ch'))
-        return planDeCompte.ligneBudgetIsInChapitre(r, subset.slice('Ch'.length))
+    if (token.startsWith('Ch'))
+        return planDeCompte.ligneBudgetIsInChapitre(r, token.slice('Ch'.length))
 
-    if (subset.startsWith('C'))
-        return planDeCompte.ligneBudgetIsInCompte(r, subset.slice('C'.length))
+    if (token.startsWith('C'))
+        return planDeCompte.ligneBudgetIsInCompte(r, token.slice('C'.length))
 
-    if (subset.startsWith('F'))
-        return planDeCompte.ligneBudgetIsInFonction(r, subset.slice('F'.length))
+    if (token.startsWith('F'))
+        return planDeCompte.ligneBudgetIsInFonction(r, token.slice('F'.length))
 
-    if (subset.startsWith('Ann'))
-        return subset.slice('Ann'.length) === String(planDeCompte.Exer)
+    if (token.startsWith('Ann'))
+        return token.slice('Ann'.length) === String(planDeCompte.Exer)
 
-    console.warn('matchesSubset - Unhandled case', subset);
+    console.log('An identifier', token)
+
+    const ligneBudgetSet = identifierToLigneBudgetSet.get(token)
+
+    if(ligneBudgetSet){
+        return ligneBudgetSet.has(r)
+    }
+    else{
+        console.warn('unknown identifier', token, [...identifierToLigneBudgetSet.keys()])
+    }
 }
 
-function matchesComplex(r, planDeCompte, combo) {
+function matchesComplex(r, planDeCompte, identifierToLigneBudgetSet, combo) {
 
     if (typeof combo === 'string')
-        return matchesSimple(r, planDeCompte, combo);
+        return matchesSimple(r, planDeCompte, combo, identifierToLigneBudgetSet);
     
     // assert(Array.isArray(combo))
 
@@ -51,11 +60,11 @@ function matchesComplex(r, planDeCompte, combo) {
         switch (operator) {
             case '+':
             case '∪':
-                return matchesComplex(r, planDeCompte, left) || matchesComplex(r, planDeCompte, right)
+                return matchesComplex(r, planDeCompte, identifierToLigneBudgetSet, left) || matchesComplex(r, planDeCompte, identifierToLigneBudgetSet, right)
             case '∩':
-                return matchesComplex(r, planDeCompte, left) && matchesComplex(r, planDeCompte, right)
+                return matchesComplex(r, planDeCompte, identifierToLigneBudgetSet, left) && matchesComplex(r, planDeCompte, identifierToLigneBudgetSet, right)
             case '-':
-                return matchesComplex(r, planDeCompte, left) && !matchesComplex(r, planDeCompte, right)
+                return matchesComplex(r, planDeCompte, identifierToLigneBudgetSet, left) && !matchesComplex(r, planDeCompte, identifierToLigneBudgetSet, right)
             default:
                 console.warn('matchesSubset - Unhandled case', operator, combo);
         }
@@ -69,7 +78,7 @@ const returnFalseFunction = Object.freeze(() => false);
 /*
     returns a function that can be used in the context of a documentBudgetaire.rows.filter()
 */
-export default memoize(function makeLigneBudgetFilterFromFormula(formula, planDeCompte) {
+export default memoize(function makeLigneBudgetFilterFromFormula(formula, planDeCompte, identifierToLigneBudgetSet) {
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
     try{
@@ -78,7 +87,7 @@ export default memoize(function makeLigneBudgetFilterFromFormula(formula, planDe
         if(parser.results[0] === undefined)
             return returnFalseFunction
         else
-            return memoize(budgetRow => matchesComplex(budgetRow, planDeCompte, parser.results[0]))
+            return memoize(budgetRow => matchesComplex(budgetRow, planDeCompte, identifierToLigneBudgetSet, parser.results[0]))
     }
     catch(e){
         return returnFalseFunction

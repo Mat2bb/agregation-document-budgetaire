@@ -27,6 +27,7 @@ SUBSET -> RD        {% id %}
     | COMPTE        {% id %}
     | FONCTION      {% id %}
     | ANNEE         {% id %}
+    | IDENTIFIANT   {% id %}
 
 RD -> "R"   {% id %}
     | "D"   {% id %}
@@ -45,6 +46,8 @@ COMPTE -> "C" [0-9]:+           {% ts => ts[0]+ts[1].join('') %}
 FONCTION -> "F" [0-9]:+         {% ts => ts[0]+ts[1].join('') %}
 
 ANNEE -> "Ann" [0-9]:+          {% ts => ts[0]+ts[1].join('') %}
+
+IDENTIFIANT -> [\w._]:+          {% ts => ts[0]+ts[1].join('') %}
 
 
 # Whitespace
