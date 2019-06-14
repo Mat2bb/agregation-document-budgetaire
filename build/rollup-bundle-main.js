@@ -4443,6 +4443,16 @@ function AggregationDescriptionLeafEditor(_ref5) {
   })))] : undefined));
 }
 
+function listPotentialParents(aggregationDescription) {
+  if (aggregationDescription.children) {
+    var potentialParents = Object.values(aggregationDescription.children).map(listPotentialParents).flat();
+    potentialParents.push(aggregationDescription);
+    return potentialParents;
+  } else {
+    return [];
+  }
+}
+
 var MillerColumn =
 /*#__PURE__*/
 function (_Component) {
@@ -4470,10 +4480,12 @@ function (_Component) {
           addChild = _ref.addChild,
           editChild = _ref.editChild,
           removeChild = _ref.removeChild,
+          moveElement = _ref.moveElement,
           onNodeSelection = _ref.onNodeSelection,
           selectedChildId = _ref.selectedChildId,
           isLast = _ref.isLast,
-          parentUseInAnalysis = _ref.parentUseInAnalysis;
+          parentUseInAnalysis = _ref.parentUseInAnalysis,
+          potentialParents = _ref.potentialParents;
       var adding = _ref2.adding,
           editingNode = _ref2.editingNode;
       return h("ol", null, Object.values(aggregationDescription.children).map(function (node) {
@@ -4517,6 +4529,19 @@ function (_Component) {
             addChild(newChild);
           }
 
+          if (editingNode) {
+            var selectedParentId = e.target.querySelector('select[name="new-parent"]').selectedOptions[0].value;
+            var selectedParent = potentialParents.find(function (pp) {
+              return pp.id === selectedParentId;
+            });
+
+            if (!Object.values(selectedParent.children).find(function (c) {
+              return c === editingNode;
+            })) {
+              moveElement(editingNode, selectedParent);
+            }
+          }
+
           _this2.setState({
             adding: false,
             editingNode: undefined
@@ -4545,7 +4570,17 @@ function (_Component) {
         defaultChecked: editingNode ? editingNode.useInAnalysis : true,
         type: "checkbox",
         name: "use-in-analysis"
-      }))), h("section", null, h("button", {
+      }))), editingNode ? h("section", null, h("label", null, "Rattacher \xE0 un autre parent", h("select", {
+        name: "new-parent"
+      }, potentialParents.map(function (pp) {
+        var selected = !!Object.values(pp.children).find(function (c) {
+          return c === editingNode;
+        });
+        return h("option", {
+          selected: selected,
+          value: pp.id
+        }, "".concat(pp.name, " (").concat(pp.id, ")"));
+      })))) : undefined, h("section", null, h("button", {
         type: "submit"
       }, "ok"), h("button", {
         type: "button",
@@ -4622,8 +4657,10 @@ function (_Component2) {
           _ref3$aggregationDesc = _ref3.aggregationDescriptionMutations,
           addChild = _ref3$aggregationDesc.addChild,
           removeChild = _ref3$aggregationDesc.removeChild,
+          moveElement = _ref3$aggregationDesc.moveElement,
           _editChild = _ref3$aggregationDesc.editChild,
           setSelectionList = _ref3.millerColumnSelection.set;
+      var potentialParents = listPotentialParents(aggregationDescription);
       var firstSelectedId = selectedList[0];
       var editChildByLevel = selectedList.map(function (id, i) {
         return i === 0 ? _editChild : function (previousChild, newChild, newSelectedList) {
@@ -4671,6 +4708,7 @@ function (_Component2) {
         ref: this.setColumnsContainerElement
       }, h(MillerColumn, {
         aggregationDescription: aggregationDescription,
+        potentialParents: potentialParents,
         selectedChildId: firstSelectedId,
         isLast: selectedList.length === 1,
         addChild: addChild,
@@ -4678,6 +4716,7 @@ function (_Component2) {
           return _editChild(previousChild, newChild, []);
         },
         removeChild: removeChild,
+        moveElement: moveElement,
         onNodeSelection: function onNodeSelection(id) {
           return setSelectionList(id ? [id] : []);
         },
@@ -4731,6 +4770,7 @@ function (_Component2) {
         return descriptionNode.children ? h(MillerColumn, {
           key: id,
           aggregationDescription: descriptionNode,
+          potentialParents: potentialParents,
           selectedChildId: selectedList[i + 1],
           isLast: i === selectedList.length - 2,
           addChild: addChildDeep,
@@ -4747,6 +4787,7 @@ function (_Component2) {
             }), []);
           },
           removeChild: removeChildDeep,
+          moveElement: moveElement,
           onNodeSelection: function onNodeSelection(id) {
             return setSelectionList(id ? [].concat(_toConsumableArray(selectedList.slice(0, i + 1)), [id]) : selectedList.slice(0, i + 1));
           },
@@ -5216,6 +5257,40 @@ function Store({
   };
 }
 
+function findParentAndElementInDraftTree(draftTree, el) {
+  if (draftTree.id === el.id) {
+    return {
+      element: draftTree
+    };
+  }
+
+  if (draftTree.children) {
+    var parent = draftTree;
+    var foundChild = Object.values(parent.children).find(function (c) {
+      return c.id === el.id;
+    });
+
+    if (foundChild) {
+      return {
+        parent: parent,
+        element: foundChild
+      };
+    } else {
+      var _arr = Object.values(draftTree.children);
+
+      for (var _i = 0; _i < _arr.length; _i++) {
+        var child = _arr[_i];
+        var ret = findParentAndElementInDraftTree(child, el);
+        if (ret) return ret;
+      }
+    }
+  } else {
+    return draftTree.id === el.id ? {
+      element: el
+    } : undefined;
+  }
+}
+
 var store = new Store({
   state: {
     millerColumnSelection: [],
@@ -5262,6 +5337,19 @@ var store = new Store({
         return produce(state, function (draft) {
           delete draft.aggregationDescription.children[child.id]; // select newly created node
 
+          draft.millerColumnSelection = [];
+        });
+      },
+      moveElement: function moveElement(state, element, newParent) {
+        return produce(state, function (draft) {
+          var _findParentAndElement = findParentAndElementInDraftTree(draft.aggregationDescription, element),
+              currentParent = _findParentAndElement.parent;
+
+          var _findParentAndElement2 = findParentAndElementInDraftTree(draft.aggregationDescription, newParent),
+              newParentInDraft = _findParentAndElement2.element;
+
+          delete currentParent.children[element.id];
+          newParentInDraft.children[element.id] = element;
           draft.millerColumnSelection = [];
         });
       }
