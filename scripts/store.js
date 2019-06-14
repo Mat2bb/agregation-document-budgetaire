@@ -4,6 +4,33 @@ import produce, {original} from 'immer'
 import {ASYNC_STATUS, STATUS_PENDING, STATUS_ERROR, STATUS_VALUE} from './asyncStatusHelpers.js'
 
 
+function findParentAndElementInDraftTree(draftTree, el){
+
+    if(draftTree.id === el.id){
+        return {element: draftTree}
+    }
+
+    if(draftTree.children){
+        const parent = draftTree;
+        const foundChild = Object.values(parent.children).find(c => c.id === el.id)
+
+        if(foundChild){
+            return {parent, element: foundChild}
+        }
+        else{
+            for(const child of Object.values(draftTree.children)){
+                const ret = findParentAndElementInDraftTree(child, el)
+                if(ret)
+                    return ret;
+            }
+        }
+            
+    }
+    else{
+        return draftTree.id === el.id ? {element: el} : undefined
+    }
+}
+
 export default new Store({
     state: {
         millerColumnSelection: [],
@@ -56,6 +83,17 @@ export default new Store({
                     
                     // select newly created node
                     draft.millerColumnSelection = [];
+                })
+            },
+            moveElement(state, element, newParent){
+                return produce(state, draft => {
+                    const {parent: currentParent} = findParentAndElementInDraftTree(draft.aggregationDescription, element)
+                    const {element: newParentInDraft} = findParentAndElementInDraftTree(draft.aggregationDescription, newParent)
+
+                    delete currentParent.children[element.id]
+                    newParentInDraft.children[element.id] = element
+
+                    draft.millerColumnSelection = []
                 })
             }
         },

@@ -4,6 +4,19 @@ import {h, Component} from 'preact'
 import {AggregationDescriptionFromJSON} from '../finance/AggregationDataStructures.js'
 import AggregationDescriptionLeafEditor from './AggregationDescriptionLeafEditor.js'
 
+function listPotentialParents(aggregationDescription){
+    if(aggregationDescription.children){
+        const potentialParents = Object.values(aggregationDescription.children).map(listPotentialParents).flat()
+        
+        potentialParents.push(aggregationDescription)
+        
+        return potentialParents;
+    }
+    else{
+        return []
+    }
+}
+
 class MillerColumn extends Component {
     constructor(props) {
         super(props);
@@ -13,7 +26,7 @@ class MillerColumn extends Component {
         };
     }
 
-    render({aggregationDescription, addChild, editChild, removeChild, onNodeSelection, selectedChildId, isLast, parentUseInAnalysis}, {adding, editingNode}) {
+    render({aggregationDescription, addChild, editChild, removeChild, moveElement, onNodeSelection, selectedChildId, isLast, parentUseInAnalysis, potentialParents}, {adding, editingNode}) {
 
         return (
             html`<ol>
@@ -70,6 +83,15 @@ class MillerColumn extends Component {
                                     addChild(newChild)
                                 }
 
+                                if(editingNode){
+                                    const selectedParentId = e.target.querySelector('select[name="new-parent"]').selectedOptions[0].value
+                                    const selectedParent = potentialParents.find(pp => pp.id === selectedParentId)
+
+                                    if(!Object.values(selectedParent.children).find(c => c === editingNode)){
+                                        moveElement(editingNode, selectedParent)
+                                    }
+                                }
+
                                 this.setState({
                                     adding: false,
                                     editingNode: undefined
@@ -100,6 +122,28 @@ class MillerColumn extends Component {
                                         <input defaultChecked=${editingNode ? editingNode.useInAnalysis : true}  type="checkbox" name="use-in-analysis"/>
                                     </label>
                                 </section>
+                                ${
+                                    editingNode ? 
+                                        html`<section>
+                                            <label>
+                                                Rattacher à un autre parent
+                                                <select name="new-parent">
+                                                    ${
+                                                        potentialParents.map(pp => {
+                                                            const selected = !!Object.values(pp.children).find(c => c === editingNode)
+
+                                                            return html`
+                                                                <option selected=${selected} value=${pp.id}>
+                                                                    ${`${pp.name} (${pp.id})`}
+                                                                </option>
+                                                            `
+                                                        })
+                                                    }
+                                                </select>
+                                            </label>
+                                        </section>
+                                        ` : undefined
+                                }
                                 <section>
                                     <button type="submit">ok</button>
                                     <button type="button" onClick=${() => this.setState({adding: false, editingNode: undefined})}>annuler</button>
@@ -141,7 +185,9 @@ class MillerColumns extends Component {
         this.columnsContainerElement.scrollLeft = this.columnsContainerElement.scrollWidth
     }
 
-    render({aggregationDescription, aggregatedDocumentBudgetaire, planDeCompte, selectedList, aggregationDescriptionMutations: {addChild, removeChild, editChild}, millerColumnSelection: {set: setSelectionList}}){
+    render({aggregationDescription, aggregatedDocumentBudgetaire, planDeCompte, selectedList, aggregationDescriptionMutations: {addChild, removeChild, moveElement, editChild}, millerColumnSelection: {set: setSelectionList}}){
+
+        const potentialParents = listPotentialParents(aggregationDescription)
 
         const firstSelectedId = selectedList[0];
 
@@ -175,12 +221,14 @@ class MillerColumns extends Component {
             <h2>Création/édition</h2>
             <div class="columns" ref=${this.setColumnsContainerElement}>
                 <${MillerColumn} 
-                    aggregationDescription=${aggregationDescription} 
+                    aggregationDescription=${aggregationDescription}
+                    potentialParents=${potentialParents}
                     selectedChildId=${firstSelectedId}
                     isLast=${selectedList.length === 1}
                     addChild=${addChild}
                     editChild=${(previousChild, newChild) => editChild(previousChild, newChild, [])}
-                    removeChild=${removeChild}}
+                    removeChild=${removeChild}
+                    moveElement=${moveElement}
                     onNodeSelection=${id => setSelectionList(id ? [id] : [])}
                     parentUseInAnalysis=${aggregationDescription.useInAnalysis}
                 />
@@ -219,6 +267,7 @@ class MillerColumns extends Component {
                             html`<${MillerColumn} 
                                 key=${id}
                                 aggregationDescription=${descriptionNode} 
+                                potentialParents=${potentialParents}
                                 selectedChildId=${selectedList[i+1]}
                                 isLast=${i === selectedList.length - 2}
                                 addChild=${ addChildDeep }
@@ -236,7 +285,8 @@ class MillerColumns extends Component {
                                     }),
                                     []
                                 )}
-                                removeChild=${ removeChildDeep }}
+                                removeChild=${ removeChildDeep }
+                                moveElement=${moveElement}
                                 onNodeSelection=${id => setSelectionList(id ? [...selectedList.slice(0, i+1), id] : selectedList.slice(0, i+1))},
                                 parentUseInAnalysis=${descriptionNode.useInAnalysis}
                             />` :
