@@ -1,4 +1,4 @@
-import Bouture from 'https://cdn.jsdelivr.net/gh/DavidBruant/bouture@13cb6c683fa87e5feea574311dcda6353489bb3b/bouture.js'
+import FormulaExamples from '../formula-examples/FormulaExamples.svelte'
 import memoize from '../memoize.js'
 import { sum } from 'd3-array';
 import { xml } from 'd3-fetch';
@@ -6,6 +6,7 @@ import { xml } from 'd3-fetch';
 import xmlDocumentToDocumentBudgetaire from '../finance/xmlDocumentToDocumentBudgetaire.js'
 import makeLigneBudgetFilterFromFormula from '../DocumentBudgetaireQueryLanguage/makeLigneBudgetFilterFromFormula.js'
 import {fromXMLDocument} from '../finance/planDeCompte.js'
+
 
 function makeTable(rows, year, planDeCompte) {
     return Bouture.section([
@@ -143,13 +144,21 @@ document.addEventListener('DOMContentLoaded', e => {
         }
     ];
 
-    const ul = Bouture.ul(examples.map(({ formula, description }) => {
+    /*const ul = Bouture.ul(examples.map(({ formula, description }) => {
         return Bouture.li([
             Bouture.a({ href: `#${encodeURIComponent(formula)}` }).code(formula),
             Bouture.span(` : ${description}`)
         ])
     })).getElement();
 
-    document.body.querySelector('ul.examples').replaceWith(ul)
+    document.body.querySelector('ul.examples').replaceWith(ul)*/
+
+    const fe = new FormulaExamples({
+        target: document.body.querySelector('main'),
+        /*props: {
+            name: 'world'
+        }*/
+    });
+
 
 }, { once: true })
