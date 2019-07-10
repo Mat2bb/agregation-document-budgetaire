@@ -74,10 +74,8 @@ docBudgP
 .then(docBudg => console.log('docBudg', docBudg))
 
 
-const formula = decodeURIComponent(location.hash.slice(1))
-
 const state = {
-    formula,
+    formula: decodeURIComponent(location.hash.slice(1)) || '',
     planDeCompte: undefined,
     lignes: undefined,
     examples
@@ -95,12 +93,13 @@ document.addEventListener('DOMContentLoaded', e => {
     Promise.all([ docBudgP, planDeCompteP ])
     .then(([docBudg, planDeCompte]) => {
 
-        state.lignes = getFormulaLignes(formula, docBudg, planDeCompte)
+        state.lignes = getFormulaLignes(state.formula, docBudg, planDeCompte)
         state.planDeCompte = planDeCompte
 
-        formulaExamplesUI.$set(state)
+        formulaExamplesUI.$set(Object.assign({}, state))
 
         formulaExamplesUI.$on('formula-change', formula => {
+            state.formula = formula
             state.lignes = getFormulaLignes(formula, docBudg, planDeCompte)
 
             // save in hash if formula stayed unchanged for 3secs
@@ -111,26 +110,26 @@ document.addEventListener('DOMContentLoaded', e => {
             }, 3000)
         })
         
+        window.addEventListener('hashchange', () => {
+            const hashValue = decodeURIComponent(location.hash.slice(1).trim());
+    
+    
+            if(hashValue && state.formula !== hashValue){
+                state.formula = hashValue
+                state.lignes = getFormulaLignes(hashValue, docBudg, planDeCompte)
+                formulaExamplesUI.$set(Object.assign({}, state))
+            }
+        })
+
     })
 
-    /*function hashUpdate() {
-        const hashValue = decodeURIComponent(location.hash.slice(1));
-
-        if (hashValue && hashValue !== input.value) {
-            input.value = hashValue;
-            input.dispatchEvent(new Event('input'))
-        }
-    }
-
     // empty input (sometimes filled with pre-refresh value)
-    input.value = "";
-    input.focus()*/
-
+    
     // initialize input vith hash value
-    /*Promise.all([ docBudgP, planDeCompteP ]).then(hashUpdate)
+    //Promise.all([ docBudgP, planDeCompteP ]).then(hashUpdate)
 
-    window.addEventListener('hashchange', hashUpdate)
-    */
+    
+    
 
 
 }, { once: true })

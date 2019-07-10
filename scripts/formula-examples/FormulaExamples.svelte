@@ -33,6 +33,6 @@ input.formula{
 	{/each}
 </ul>
 
-<input class="formula" type="text" bind:value={formula}>
+<input autofocus class="formula" type="text" bind:value={formula}>
 
 <FormulaPreview {lignes} {planDeCompte}/>

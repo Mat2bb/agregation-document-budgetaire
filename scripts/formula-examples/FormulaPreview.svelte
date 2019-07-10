@@ -42,7 +42,7 @@ output table tbody td:nth-child(5){
                 </tr>
             </thead>
             <tbody>
-                {#each lignes as l}
+                {#each lignes as l (l)}
                     <tr>
                         <td>{l['CodRD']}</td>
                         <td>{planDeCompte.ligneBudgetFI(l)}</td>
