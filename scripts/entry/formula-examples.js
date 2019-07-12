@@ -1,6 +1,5 @@
 import FormulaExamples from '../formula-examples/FormulaExamples.svelte'
 import memoize from '../memoize.js'
-import { sum } from 'd3-array';
 import { xml } from 'd3-fetch';
 
 import xmlDocumentToDocumentBudgetaire from '../finance/xmlDocumentToDocumentBudgetaire.js'
@@ -93,16 +92,17 @@ document.addEventListener('DOMContentLoaded', e => {
     Promise.all([ docBudgP, planDeCompteP ])
     .then(([docBudg, planDeCompte]) => {
 
-        state.lignes = getFormulaLignes(state.formula, docBudg, planDeCompte)
         state.planDeCompte = planDeCompte
 
-        formulaExamplesUI.$set(Object.assign({}, state))
-
-        formulaExamplesUI.$on('formula-change', ({detail: formula}) => {
+        const onFormulaChange = formula => {
             state.formula = formula
             state.lignes = getFormulaLignes(formula, docBudg, planDeCompte)
 
-            formulaExamplesUI.$set(Object.assign({}, state))
+            formulaExamplesUI.$set(state)
+        }
+
+        formulaExamplesUI.$on('formula-change', ({detail: formula}) => {
+            onFormulaChange(formula)
 
             // save in hash if formula stayed unchanged for 3secs
             clearTimeout(changeHashTimeout)
@@ -115,23 +115,11 @@ document.addEventListener('DOMContentLoaded', e => {
         window.addEventListener('hashchange', () => {
             const hashValue = decodeURIComponent(location.hash.slice(1).trim());
     
-    
-            if(hashValue && state.formula !== hashValue){
-                state.formula = hashValue
-                state.lignes = getFormulaLignes(hashValue, docBudg, planDeCompte)
-                formulaExamplesUI.$set(Object.assign({}, state))
-            }
+            onFormulaChange(hashValue)
         })
 
+        onFormulaChange(state.formula)
+
     })
-
-    // empty input (sometimes filled with pre-refresh value)
-    
-    // initialize input vith hash value
-    //Promise.all([ docBudgP, planDeCompteP ]).then(hashUpdate)
-
-    
-    
-
 
 }, { once: true })
