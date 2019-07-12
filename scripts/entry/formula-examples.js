@@ -98,9 +98,11 @@ document.addEventListener('DOMContentLoaded', e => {
 
         formulaExamplesUI.$set(Object.assign({}, state))
 
-        formulaExamplesUI.$on('formula-change', formula => {
+        formulaExamplesUI.$on('formula-change', ({detail: formula}) => {
             state.formula = formula
             state.lignes = getFormulaLignes(formula, docBudg, planDeCompte)
+
+            formulaExamplesUI.$set(Object.assign({}, state))
 
             // save in hash if formula stayed unchanged for 3secs
             clearTimeout(changeHashTimeout)

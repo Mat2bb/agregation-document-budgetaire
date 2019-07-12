@@ -1,5 +1,8 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
 	import FormulaPreview from './FormulaPreview.svelte'
+
+	const dispatch = createEventDispatcher();
 
 	export let formula;
 	export let planDeCompte;
@@ -22,7 +25,7 @@ input.formula{
 <h2>Un outil pour filtrer les lignes d'un document budgétaires</h2>
 <p>Pour le moment, cet outil ne filtre que les données des <a href="https://www.datalocale.fr/dataset/comptes-administratifs-budget-principal-donnees-budgetaires-du-departement-de-la-gironde">Comptes Administratifs du Département de la Gironde</a> pour l'année 2017</p>
 
-<h2>Exemples de yopo formules</h2>
+<h2>Exemples de formules</h2>
 
 <ul class="examples">
 	{#each examples as {formula, description}}
@@ -33,6 +36,6 @@ input.formula{
 	{/each}
 </ul>
 
-<input autofocus class="formula" type="text" bind:value={formula}>
+<input autofocus class="formula" type="text" bind:value={formula} on:input="{e => dispatch('formula-change', e.target.value.trim())}">
 
 <FormulaPreview {lignes} {planDeCompte}/>
