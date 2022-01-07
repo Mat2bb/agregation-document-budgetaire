@@ -7,7 +7,9 @@ function makePlanDeCompteURL(docBudg){
     const [norme, sousNorme] = docBudg.Nomenclature.split('-');
     const année = docBudg.Exer;
 
-    return `https://dtc-innovation.github.io/plans-de-compte/${année}/${norme}/${sousNorme}/planDeCompte.xml`
+    //return `https://dtc-innovation.github.io/plans-de-compte/${année}/${norme}/${sousNorme}/planDeCompte.xml`
+    // Modif MWO
+    return `https://mat2bb.github.io/agregation-document-budgetaire/data/plansDeCompte/plan-de-compte-${norme}-${sousNorme}-${année}.xml`
 }
 
 export default function(store){
